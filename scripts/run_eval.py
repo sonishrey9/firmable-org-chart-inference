@@ -76,7 +76,7 @@ rel_raw = reliability(test, col="raw_conf")
 metrics["curves"] = dict(precision_coverage=pc.to_dict("records"), reliability=rel.to_dict("records"),
                          reliability_raw=rel_raw.to_dict("records"))
 naive = pc.iloc[0]
-metrics["naive_always_guess_test"] = dict(precision=round(float(naive.precision), 4), coverage=round(float(naive.coverage), 4),
+metrics["naive_always_guess_test"] = dict(precision=round(float(naive.precision), 6), coverage=round(float(naive.coverage), 6),
                                           note="top candidate for everyone, no abstention")
 metrics["breakdowns"] = {k: breakdown(test, k).to_dict("records") for k in
                          ["noise_level", "size_bucket", "industry", "true_level", "is_contractor", "heldout_title"]}

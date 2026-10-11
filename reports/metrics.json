@@ -70,8 +70,8 @@
   "answered_any": 0.1854
  },
  "naive_always_guess_test": {
-  "precision": 0.5185,
-  "coverage": 0.9665,
+  "precision": 0.518536,
+  "coverage": 0.966523,
   "note": "top candidate for everyone, no abstention"
  },
  "parser": {

@@ -4,7 +4,8 @@
   const $ = (s, el = document) => el.querySelector(s);
   const css = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
   const fmt = (x, d = 2) => (x === null || x === undefined || Number.isNaN(x)) ? '–' : Number(x).toFixed(d);
-  const pct = (x, d = 1) => (x === null || x === undefined) ? '–' : (100 * x).toFixed(d) + '%';
+  // round half up on the decimal value (toFixed alone turns 51.85 into 51.8 because of binary floats)
+  const pct = (x, d = 1) => (x === null || x === undefined) ? '–' : (Math.round(100 * x * 10 ** d + 1e-6) / 10 ** d).toFixed(d) + '%';
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
   const S = {
