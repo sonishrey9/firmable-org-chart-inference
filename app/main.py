@@ -25,6 +25,7 @@ STATIC = Path(__file__).parent / "static"
 MAX_UPLOAD_ROWS = 3000
 
 app = FastAPI(title="Org Chart Inference", version="0.1.0", docs_url="/api/docs", openapi_url="/api/openapi.json")
+app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 
 @lru_cache(maxsize=1)

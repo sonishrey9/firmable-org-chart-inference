@@ -61,3 +61,8 @@ def test_upload_header_only_is_400(client):
     r = client.post("/api/infer", files={"file": ("h.csv", b"full_name,title,department\n", "text/csv")})
     assert r.status_code == 400
     assert "No rows found" in r.json()["detail"]
+
+
+def test_gzip_enabled(client):
+    r = client.get("/api/companies", params={"page_size": 50}, headers={"Accept-Encoding": "gzip"})
+    assert r.headers.get("content-encoding") == "gzip"
