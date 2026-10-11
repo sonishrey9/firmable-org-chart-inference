@@ -516,7 +516,7 @@
       plugins: { tooltip: { callbacks: { label: (c) => `threshold ${fmt(c.raw.t)} · precision ${pct(c.raw.y)} · coverage ${pct(c.raw.x)}` } }, legend: { labels: { boxWidth: 10 } } } } });
     const rel = curves.reliability, raw = curves.reliability_raw;
     S.charts.rel = new Chart($('#ch-rel'), { type: 'scatter', data: { datasets: [
-      { label: 'Perfect calibration', data: [{ x: 0, y: 0 }, { x: 1, y: 1 }], showLine: true, borderColor: line, borderDash: [4, 4], pointRadius: 0 },
+      { label: 'Perfect calibration', data: [{ x: 0, y: 0 }, { x: 1, y: 1 }], showLine: true, borderColor: css('--c1'), backgroundColor: css('--c1'), borderWidth: 1.5, borderDash: [6, 5], pointRadius: 0, order: 3 },
       { label: 'Before (raw score)', data: raw.map((r) => ({ x: r.mean_confidence, y: r.accuracy, n: r.n })), showLine: true, borderColor: c2, backgroundColor: c2, pointRadius: 3 },
       { label: 'After isotonic', data: rel.map((r) => ({ x: r.mean_confidence, y: r.accuracy, n: r.n })), showLine: true, borderColor: accent, backgroundColor: accent, pointRadius: 3, borderWidth: 2 },
     ] }, options: { maintainAspectRatio: false, scales: { x: { min: 0, max: 1, title: { display: true, text: 'Stated confidence' } }, y: { min: 0, max: 1, title: { display: true, text: 'Actually correct' } } },
