@@ -6,9 +6,10 @@
 <title>Org Chart Inference · reporting lines from job titles</title>
 <meta name="description" content="Infers who reports to whom from a flat list of people and job titles, with calibrated confidence and honest abstention.">
 <meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27%230f6b63%27 stroke-width=%272%27 stroke-linecap=%27round%27%3E%3Crect x=%279%27 y=%272.5%27 width=%276%27 height=%275%27 rx=%271.2%27/%3E%3Crect x=%272.5%27 y=%2716.5%27 width=%276%27 height=%275%27 rx=%271.2%27/%3E%3Crect x=%2715.5%27 y=%2716.5%27 width=%276%27 height=%275%27 rx=%271.2%27/%3E%3Cpath d=%27M12 7.5v4.5M5.5 16.5V12h13v4.5%27/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script>
   // theme before paint
   (function(){const t=localStorage.getItem('theme')||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');document.documentElement.dataset.theme=t;})();
@@ -57,9 +58,9 @@
         <input id="q" type="search" placeholder="Search 520 companies" autocomplete="off">
       </div>
       <div class="filters">
-        <select id="f-industry" aria-label="Industry"><option value="">All industries</option></select>
-        <select id="f-size" aria-label="Company size"><option value="">All sizes</option></select>
-        <select id="f-noise" aria-label="Data noise level"><option value="">Any noise</option></select>
+        <select id="f-industry" aria-label="Industry"><option value="">Industry</option></select>
+        <select id="f-size" aria-label="Company size"><option value="">Size</option></select>
+        <select id="f-noise" aria-label="Data noise level"><option value="">Noise</option></select>
       </div>
     </div>
     <ul id="company-list" class="company-list" aria-label="Companies"></ul>
@@ -109,7 +110,7 @@
         <span><i class="sw" style="--c:var(--c3)"></i>0.8+</span>
         <span><i class="sw" style="--c:var(--c2)"></i>0.6+</span>
         <span><i class="sw" style="--c:var(--c1)"></i>&lt;0.6</span>
-        <span><i class="sw dashed"></i>rolls up to</span>
+        <span><svg width="18" height="4" aria-hidden="true"><line x1="0" y1="2" x2="18" y2="2" stroke="currentColor" stroke-width="1.6" stroke-dasharray="4 3"/></svg>rolls up to</span>
         <span class="truth-only"><i class="sw" style="--c:var(--wrong)"></i>wrong</span>
       </div>
     </div>
@@ -174,12 +175,12 @@
     <h1 class="page-title">How it works</h1>
     <p class="lede">A wrong edge is worse than no edge. So the system publishes a reporting line only when it can explain it and the confidence is calibrated. Otherwise it says "rolls up to" or leaves the manager blank.</p>
     <ol class="steps">
-      <li><h3>Generate the truth first, then add the mess</h3><p>Each synthetic company starts as a real tree (CEO, execs, VPs, directors, managers, ICs) across 9 industries and 4 size bands. Only then is it flattened into a people list with noise: synonyms, abbreviations, typos, missing titles and departments, wrong HR departments, duplicates, contractors, people who have left, and titles in other languages that the parser was never written for. The answer key is kept separately.</p></li>
-      <li><h3>Read each title with rules</h3><p>Rules plus RapidFuzz typo repair turn the title (and the department field) into a level, department, team and flags. "Product Manager" is an individual contributor, "Group Product Manager" is a manager, and "Solutions Engineer" sits in Sales.</p></li>
-      <li><h3>Find candidate managers</h3><p>The candidates are the nearest layer above in the same department. Where a department has no leader of its own, the candidates are the execs who usually own it. Records of the same person are merged, and a "Head of Data" who sits above other directors is treated as the VP.</p></li>
-      <li><h3>Score, calibrate and abstain</h3><p>Candidates are scored on team, office, stale records and title quality. Raw confidence is the best candidate's share, adjusted for title quality. Isotonic calibration, fitted on training companies only, makes 0.9 mean right about 90% of the time. Below the threshold, no edge is published.</p></li>
-      <li><h3>Roll up when unsure</h3><p>If the direct manager is unclear but every plausible manager reports to the same person, the app shows a dashed "rolls up to" link. Sales still gets the economic buyer without a wrong direct edge.</p></li>
-      <li><h3>Measure it</h3><p>Edge precision, coverage and F1 on held-out companies, a calibration curve, the precision and coverage trade-off, ablations, and breakdowns by noise, size and level. Click any person to see the reason for their edge and the competing candidates.</p></li>
+      <li><h2>Generate the truth first, then add the mess</h2><p>Each synthetic company starts as a real tree (CEO, execs, VPs, directors, managers, ICs) across 9 industries and 4 size bands. Only then is it flattened into a people list with noise: synonyms, abbreviations, typos, missing titles and departments, wrong HR departments, duplicates, contractors, people who have left, and titles in other languages that the parser was never written for. The answer key is kept separately.</p></li>
+      <li><h2>Read each title with rules</h2><p>Rules plus RapidFuzz typo repair turn the title (and the department field) into a level, department, team and flags. "Product Manager" is an individual contributor, "Group Product Manager" is a manager, and "Solutions Engineer" sits in Sales.</p></li>
+      <li><h2>Find candidate managers</h2><p>The candidates are the nearest layer above in the same department. Where a department has no leader of its own, the candidates are the execs who usually own it. Records of the same person are merged, and a "Head of Data" who sits above other directors is treated as the VP.</p></li>
+      <li><h2>Score, calibrate and abstain</h2><p>Candidates are scored on team, office, stale records and title quality. Raw confidence is the best candidate's share, adjusted for title quality. Isotonic calibration, fitted on training companies only, makes 0.9 mean right about 90% of the time. Below the threshold, no edge is published.</p></li>
+      <li><h2>Roll up when unsure</h2><p>If the direct manager is unclear but every plausible manager reports to the same person, the app shows a dashed "rolls up to" link. Sales still gets the economic buyer without a wrong direct edge.</p></li>
+      <li><h2>Measure it</h2><p>Edge precision, coverage and F1 on held-out companies, a calibration curve, the precision and coverage trade-off, ablations, and breakdowns by noise, size and level. Click any person to see the reason for their edge and the competing candidates.</p></li>
     </ol>
     <p class="muted text-sm">An LLM is not used for edges. There is an optional, switched-off hook to help read titles the rules cannot parse, and it never creates or overrides a reporting line.</p>
   </article>

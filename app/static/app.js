@@ -189,16 +189,16 @@
   function style() {
     const ink = css('--node-ink'), node = css('--node'), line = css('--line'), muted = css('--muted'), accent = css('--accent');
     return [
-      { selector: 'node', style: { shape: 'round-rectangle', width: 176, height: 46, 'background-color': node, 'border-width': 1, 'border-color': line,
-        label: 'data(label)', 'text-wrap': 'wrap', 'text-max-width': 160, 'font-family': 'Instrument Sans, sans-serif', 'font-size': 10.5, color: ink,
-        'text-valign': 'center', 'text-halign': 'center', 'line-height': 1.25, 'text-overflow-wrap': 'anywhere' } },
+      { selector: 'node', style: { shape: 'round-rectangle', width: 196, height: 52, 'background-color': node, 'border-width': 1, 'border-color': line,
+        label: 'data(label)', 'text-wrap': 'wrap', 'text-max-width': 180, 'font-family': 'IBM Plex Sans, sans-serif', 'font-size': 12, color: ink,
+        'text-valign': 'center', 'text-halign': 'center', 'line-height': 1.25 } },
       { selector: 'node.ceo', style: { 'border-width': 2, 'border-color': accent, 'font-weight': 700 } },
       { selector: 'node.exec', style: { 'border-width': 1.5, 'border-color': accent } },
       { selector: 'node.lead', style: { 'border-color': muted } },
       { selector: 'node.nomgr', style: { 'border-style': 'dashed', 'border-color': muted, 'border-width': 1.5 } },
       { selector: 'node.unplaced', style: { 'border-style': 'dashed', 'background-opacity': 0.55 } },
       { selector: 'node.stale', style: { opacity: 0.6 } },
-      { selector: 'node.group', style: { width: 112, height: 26, shape: 'round-rectangle', 'background-color': css('--line2'), 'border-width': 0, 'font-size': 10.5, color: muted, 'font-weight': 600 } },
+      { selector: 'node.group', style: { width: 124, height: 30, shape: 'round-rectangle', 'background-color': css('--line2'), 'border-width': 0, 'font-size': 11.5, color: muted, 'font-weight': 600 } },
       { selector: 'node.grp-rollup', style: { 'border-width': 1, 'border-style': 'dashed', 'border-color': muted } },
       { selector: 'node:selected', style: { 'border-width': 2.5, 'border-color': accent, 'overlay-opacity': 0 } },
       { selector: 'node.dim', style: { opacity: 0.25 } },
@@ -213,17 +213,31 @@
     if (!S.payload) return;
     const els = buildElements();
     if (!S.cy) {
-      S.cy = cytoscape({ container: $('#cy'), elements: [], style: style(), wheelSensitivity: 0.25, minZoom: 0.05, maxZoom: 2.5, boxSelectionEnabled: false });
+      S.cy = cytoscape({ container: $('#cy'), elements: [], style: style(), minZoom: 0.05, maxZoom: 2.5, boxSelectionEnabled: false });
       S.cy.on('tap', 'node', (ev) => onTap(ev.target));
       S.cy.on('tap', (ev) => { if (ev.target === S.cy) { hideDetails(); clearDim(); } });
     }
     S.cy.batch(() => { S.cy.elements().remove(); S.cy.add(els); });
-    S.cy.layout({ name: 'dagre', rankDir: 'TB', nodeSep: 14, rankSep: 56, edgeSep: 6, animate: false, fit: true, padding: 24 }).run();
+    S.cy.resize();
+    const vp = { zoom: S.cy.zoom(), pan: { ...S.cy.pan() } };
+    S.cy.layout({ name: 'dagre', rankDir: 'TB', nodeSep: 16, rankSep: 60, edgeSep: 6, animate: false, fit: true, padding: 24 }).run();
+    if (animate) readableView(); else S.cy.viewport(vp);   // keep the user's zoom while filtering
     if (S.selected && S.cy.getElementById(S.selected).length) S.cy.getElementById(S.selected).select();
     if (animate) { const el = $('#cy'); el.classList.remove('enter'); void el.offsetWidth; el.classList.add('enter'); }
     updateStats();
     const c = S.payload.company;
     $('#export').href = c.company_id === 'UPLOAD' ? '#' : `/api/company/${c.company_id}/export.csv?threshold=${S.thr}`;
+  }
+
+  // Fit is often too small to read for wide trees: keep a readable zoom and start at the top of the tree.
+  function readableView() {
+    const cy = S.cy, minZ = window.innerWidth < 700 ? 0.6 : 0.78;
+    if (cy.zoom() >= minZ) return;
+    const root = cy.nodes('.ceo').first();
+    const bb = cy.elements().boundingBox();
+    cy.zoom(minZ);
+    const focusX = root.length ? root.position('x') : (bb.x1 + bb.x2) / 2;
+    cy.pan({ x: cy.width() / 2 - focusX * minZ, y: 28 - bb.y1 * minZ });
   }
 
   function updateStats() {
@@ -290,11 +304,11 @@
         <dt>Dept field</dt><dd>${esc(n.department || '(missing)')}</dd>
         <dt>Read as</dt><dd>${esc([n.level_name, n.dept, n.specialty].filter(Boolean).join(' · ') || 'could not read this title')}</dd>
         <dt>Office</dt><dd>${esc(n.location || '(missing)')}</dd>
-        <dt>Updated</dt><dd class="mono">${esc(n.updated || '(missing)')}${n.stale ? ' · stale' : ''}</dd>
+        <dt>Updated</dt><dd>${n.updated ? `<span class="mono">${esc(n.updated)}</span>` : '(missing)'}${n.stale ? ' · stale, 18+ months old' : ''}</dd>
         ${p ? `<dt>${p.kind === 'edge' ? 'Manager' : 'Rolls up to'}</dt><dd>${personLink(p.p)}</dd>` : ''}
         ${reports ? `<dt>Reports</dt><dd class="mono">${reports}</dd>` : ''}
       </dl>
-      <section><h3 class="h3">Why</h3><p class="reason">${esc(n.reason || '–')}</p></section>
+      <section><h3 class="h3">Why</h3><p class="reason">${esc((n.reason || '–').replace(/C\d{4}-P\d{5}|U\d{5}/g, (id) => S.byId.get(id)?.name || id))}</p></section>
       ${cands ? `<section><h3 class="h3">Candidate managers</h3><ul class="cands">${cands}</ul></section>` : ''}
       ${truth}`;
   }
@@ -323,7 +337,7 @@
     ];
     $('#m-strip').innerHTML = strip.map(([k, v, s]) => `<div><dt>${k}</dt><dd>${v}<small>${s}</small></dd></div>`).join('');
     const ink = css('--ink'), muted = css('--muted'), line = css('--line'), accent = css('--accent'), c2 = css('--c1');
-    Chart.defaults.font.family = 'Instrument Sans, sans-serif'; Chart.defaults.color = muted; Chart.defaults.borderColor = line;
+    Chart.defaults.font.family = 'IBM Plex Sans, sans-serif'; Chart.defaults.color = muted; Chart.defaults.borderColor = line;
     const pc = curves.precision_coverage.filter((r) => r.precision != null);
     const opPt = pc.reduce((b, r) => Math.abs(r.threshold - op.threshold) < Math.abs(b.threshold - op.threshold) ? r : b, pc[0]);
     Object.values(S.charts).forEach((c) => c.destroy());
@@ -352,13 +366,13 @@
       { k: 'Level read correctly', v: pct(pr.level_accuracy) }, { k: 'Department correct (when read)', v: pct(pr.dept_accuracy_when_given) },
       { k: 'Titles left unread', v: pct(pr.unparsed_rate) }, { k: 'Held-out vocabulary left unread', v: pct(pr.heldout_unparsed_rate) },
     ], [{ h: 'Check', k: 'k' }, { h: 'Result', k: 'v', num: 1 }]);
-    const cols = (key, f = (x) => x) => [{ h: key, k: key, f: (v) => esc(f(v)) }, { h: 'Precision', k: 'precision', num: 1, f: (v) => pct(v) }, { h: 'Coverage', k: 'coverage', num: 1, f: (v) => pct(v) }, { h: '+ roll-ups', k: 'answered_any', num: 1, f: (v) => pct(v) }];
+    const cols = (key, f = (x) => x, label = key) => [{ h: label, k: key, f: (v) => esc(f(v)) }, { h: 'Precision', k: 'precision', num: 1, f: (v) => pct(v) }, { h: 'Coverage', k: 'coverage', num: 1, f: (v) => pct(v) }, { h: '+ roll-ups', k: 'answered_any', num: 1, f: (v) => pct(v) }];
     const order = ['clean', 'moderate', 'messy', 'very_messy'];
-    $('#m-noise').innerHTML = table([...m.breakdowns.noise_level].sort((a, b) => order.indexOf(a.noise_level) - order.indexOf(b.noise_level)), cols('noise_level', (x) => x.replace('_', ' ')));
+    $('#m-noise').innerHTML = table([...m.breakdowns.noise_level].sort((a, b) => order.indexOf(a.noise_level) - order.indexOf(b.noise_level)), cols('noise_level', (x) => x.replace('_', ' '), 'Noise'));
     const lv = ['CEO', 'Exec', 'VP', 'Director', 'Manager', 'IC'];
-    $('#m-level').innerHTML = table(m.breakdowns.true_level.filter((r) => r.true_level > 0), cols('true_level', (x) => lv[x]));
+    $('#m-level').innerHTML = table(m.breakdowns.true_level.filter((r) => r.true_level > 0), cols('true_level', (x) => lv[x], 'Level'));
     const so = ['100-199', '200-499', '500-999', '1000+'];
-    $('#m-size').innerHTML = table([...m.breakdowns.size_bucket].sort((a, b) => so.indexOf(a.size_bucket) - so.indexOf(b.size_bucket)), cols('size_bucket'));
+    $('#m-size').innerHTML = table([...m.breakdowns.size_bucket].sort((a, b) => so.indexOf(a.size_bucket) - so.indexOf(b.size_bucket)), cols('size_bucket', (x) => x, 'Employees'));
   }
 
   /* ---------- upload ---------- */
@@ -371,6 +385,7 @@
       const d = await api('/api/infer', { method: 'POST', body: fd });
       location.hash = '#explore';
       setPayload(d);
+      document.querySelectorAll('#company-list button').forEach((b) => b.setAttribute('aria-current', 'false'));
       $('#export').onclick = (e) => { if (S.payload.company.company_id !== 'UPLOAD') return; e.preventDefault(); downloadUploadCsv(); };
     } catch (e) { const el = $('#upload-err'); el.textContent = e.message; el.hidden = false; }
     finally { btn.disabled = !file; btn.textContent = 'Infer the org chart'; }
@@ -408,6 +423,7 @@
     $('#t-truth').addEventListener('change', (e) => { S.truth = e.target.checked; document.body.classList.toggle('truth', S.truth); draw(false); if (S.selected) showDetails(S.byId.get(S.selected)); });
     $('#f-dept').addEventListener('change', (e) => { S.dept = e.target.value; draw(false); });
     $('#fit').addEventListener('click', () => S.cy && S.cy.animate({ fit: { padding: 24 } }, { duration: 250 }));
+    window.orgchart = S; // handy for debugging and screenshot scripts
     $('#d-close').addEventListener('click', () => { hideDetails(); clearDim(); });
     $('#d-body').addEventListener('click', (e) => { const b = e.target.closest('[data-focus]'); if (!b) return; const id = b.dataset.focus; if (!S.cy.getElementById(id).length) { const p = parentOf(S.byId.get(id)); if (p) S.expanded.add(p.p); S.unplaced = true; $('#t-unplaced').checked = true; draw(false); } focus(id); });
     $('#open-picker').addEventListener('click', openPicker);

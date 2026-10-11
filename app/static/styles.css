@@ -1,10 +1,10 @@
 :root{
-  --paper:#f6f4ee; --panel:#fbfaf6; --ink:#15191f; --muted:#596170; --line:#dcd8cc; --line2:#ebe8df;
+  --paper:#eef2f1; --panel:#f9fbfa; --ink:#15191f; --muted:#596170; --line:#d3dbd9; --line2:#e4eae8;
   --accent:#0f6b63; --accent-ink:#ffffff; --focus:#0f6b63;
   --c1:#c2410c; --c2:#a86f12; --c3:#5f8f3e; --c4:#0f6b63; --wrong:#c81e3a;
   --node:#ffffff; --node-ink:#15191f; --shadow:0 1px 2px rgba(21,25,31,.06),0 6px 18px -8px rgba(21,25,31,.18);
   --radius:10px; --top:56px;
-  font-family:"Instrument Sans",ui-sans-serif,system-ui,sans-serif;
+  font-family:"IBM Plex Sans",ui-sans-serif,system-ui,sans-serif;
 }
 [data-theme=dark]{
   --paper:#101317; --panel:#151a20; --ink:#e9e6dd; --muted:#9aa1ad; --line:#2a3039; --line2:#1f242b;
@@ -77,14 +77,14 @@ select{height:34px;border:1px solid var(--line);background:var(--panel);color:va
 .c-name{font-size:22px;font-weight:650;letter-spacing:-.02em;line-height:1.2;margin:0;text-wrap:balance}
 .c-stats{display:flex;gap:18px;margin:0}
 .c-stats div{display:grid}
-.c-stats dt{font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.c-stats dt{white-space:nowrap;font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
 .c-stats dd{margin:0;font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;font-size:15px}
 .toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px;padding:8px 18px 10px;border-bottom:1px solid var(--line)}
 .thr{display:flex;align-items:center;gap:8px;font-size:13.5px}
 .thr input{width:150px}
 .thr output{min-width:3.2ch}
 .toggles{display:flex;flex-wrap:wrap;gap:4px 12px}
-.chk{display:inline-flex;align-items:center;gap:6px;font-size:13.5px;cursor:pointer;user-select:none}
+.chk{white-space:nowrap;display:inline-flex;align-items:center;gap:6px;font-size:13.5px;cursor:pointer;user-select:none}
 .tools{display:flex;gap:8px;margin-left:auto}
 .canvas-wrap{position:relative;flex:1;min-height:0}
 .cy{position:absolute;inset:0}
@@ -94,7 +94,6 @@ select{height:34px;border:1px solid var(--line);background:var(--panel);color:va
 .legend{position:absolute;left:12px;bottom:12px;display:flex;flex-wrap:wrap;gap:4px 12px;padding:7px 10px;font-size:12px;border:1px solid var(--line);border-radius:9px;background:color-mix(in oklab,var(--panel) 92%,transparent);color:var(--muted)}
 .legend span{display:inline-flex;align-items:center;gap:6px}
 .sw{display:inline-block;width:18px;height:3px;border-radius:2px;background:var(--c)}
-.sw.dashed{background:repeating-linear-gradient(90deg,var(--muted) 0 4px,transparent 4px 7px)}
 .truth-only{display:none!important}
 body.truth .truth-only{display:inline-flex!important}
 
@@ -127,7 +126,7 @@ body.truth .truth-only{display:inline-flex!important}
 .strip div:last-child{border-right:0}
 .strip dt{font-size:12.5px;color:var(--muted)}
 .strip dd{margin:2px 0 0;font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;font-size:20px}
-.strip small{display:block;color:var(--muted);font-size:12px;font-family:"Instrument Sans",sans-serif}
+.strip small{display:block;color:var(--muted);font-size:12px;font-family:"IBM Plex Sans",sans-serif}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px}
 .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
 .panel{margin:0;padding:16px 18px;border:1px solid var(--line);border-radius:var(--radius);background:var(--panel);min-width:0}
@@ -146,7 +145,7 @@ body.truth .truth-only{display:inline-flex!important}
 .steps{counter-reset:s;list-style:none;padding:0;margin:0 0 20px;display:grid;gap:18px;max-width:72ch}
 .steps li{display:grid;grid-template-columns:34px 1fr;gap:0 12px}
 .steps li::before{counter-increment:s;content:counter(s);grid-row:span 2;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;border:1px solid var(--line);font-family:"IBM Plex Mono",monospace;font-size:13px;color:var(--accent)}
-.steps h3{margin:2px 0 4px;font-size:16.5px;font-weight:650}
+.steps h2{margin:2px 0 4px;font-size:16.5px;font-weight:650}
 .steps p{margin:0;color:var(--muted)}
 
 /* responsive */
@@ -160,6 +159,9 @@ body.truth .truth-only{display:inline-flex!important}
   .grid2,.grid3{grid-template-columns:1fr}
 }
 @media (max-width:700px){
+  .toolbar{flex-wrap:nowrap;overflow-x:auto}
+  .toggles{flex-wrap:nowrap}
+  .thr label{display:none}
   .brand span{display:none}
   .tabs a{padding:7px 9px;font-size:14px}
   .stage-head{flex-direction:column;align-items:flex-start;gap:6px;padding:12px 14px 6px}
