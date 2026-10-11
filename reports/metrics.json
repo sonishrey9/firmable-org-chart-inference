@@ -1,0 +1,827 @@
+{
+ "generated_at": "2026-10-12 00:36 IST",
+ "dataset": {
+  "companies": 520,
+  "records": 202700,
+  "employees_min": 100,
+  "employees_max": 1741,
+  "employees_median": 246,
+  "industries": {
+   "Manufacturing": 74,
+   "Media": 68,
+   "EdTech": 62,
+   "Fintech": 60,
+   "Healthcare": 56,
+   "Banking": 56,
+   "SaaS": 50,
+   "Logistics": 49,
+   "Retail": 45
+  },
+  "size_buckets": {
+   "100-199": 228,
+   "200-499": 179,
+   "500-999": 84,
+   "1000+": 29
+  },
+  "noise_levels": {
+   "moderate": 184,
+   "messy": 155,
+   "clean": 93,
+   "very_messy": 88
+  },
+  "test_companies": 208,
+  "train_companies": 312
+ },
+ "operating_point": {
+  "threshold": 0.91,
+  "rollup_threshold": 0.5,
+  "target_precision": 0.95,
+  "chosen_on": "train companies",
+  "reported_on": "held-out test companies"
+ },
+ "test": {
+  "people": 70822,
+  "people_with_true_manager": 68824,
+  "edges": 6360,
+  "correct_edges": 6053,
+  "wrong_edges": 307,
+  "precision": 0.9517,
+  "recall": 0.0879,
+  "coverage": 0.0924,
+  "f1": 0.161,
+  "wrong_edges_on_people_without_manager": 27,
+  "rollups": 7380,
+  "rollup_precision": 0.9706,
+  "answered_any": 0.1984
+ },
+ "train": {
+  "people": 131878,
+  "people_with_true_manager": 128488,
+  "edges": 9907,
+  "correct_edges": 9442,
+  "wrong_edges": 465,
+  "precision": 0.9531,
+  "recall": 0.0735,
+  "coverage": 0.0771,
+  "f1": 0.1365,
+  "wrong_edges_on_people_without_manager": 47,
+  "rollups": 14071,
+  "rollup_precision": 0.9781,
+  "answered_any": 0.1854
+ },
+ "naive_always_guess_test": {
+  "precision": 0.5185,
+  "coverage": 0.9665,
+  "note": "top candidate for everyone, no abstention"
+ },
+ "parser": {
+  "level_accuracy": 0.9548,
+  "dept_accuracy_when_given": 0.9914,
+  "unparsed_rate": 0.0405,
+  "heldout_titles": 1732,
+  "heldout_unparsed_rate": 0.8204
+ },
+ "stale": {
+  "stale_records": 1790,
+  "flagged_by_date": 0.7268,
+  "got_a_wrong_edge": 26
+ },
+ "sales_questions": {
+  "who_runs_dept": {
+   "questions": 2261,
+   "answered": 2112,
+   "precision": 0.9503,
+   "coverage": 0.9341
+  },
+  "economic_buyer_above_ic": {
+   "questions": 56999,
+   "answered": 6615,
+   "precision_nearest_vp_or_exec": 0.769,
+   "precision_in_true_chain": 0.9853,
+   "coverage": 0.1161
+  }
+ },
+ "runtime_seconds_full_pipeline": 33.9,
+ "calibration_model": {
+  "kind": "heuristic+isotonic",
+  "iso": {
+   "xs": [
+    0.0,
+    0.044971867156629375,
+    0.07091276908811017,
+    0.08878708193989193,
+    0.10558916087034852,
+    0.12116298279045944,
+    0.13500410621705392,
+    0.1482899409543157,
+    0.16940860304318048,
+    0.19014806374661714,
+    0.20384479761294547,
+    0.21770272656484718,
+    0.23222960110215657,
+    0.24765994735691924,
+    0.27116538466300355,
+    0.29420617285405287,
+    0.3098627718136397,
+    0.32702908403792413,
+    0.345296203206376,
+    0.3641709166127281,
+    0.3832965627799186,
+    0.4031147142032627,
+    0.43492668850186444,
+    0.4744155500503873,
+    0.5080330589649708,
+    0.5421713280497303,
+    0.5787696966501757,
+    0.615958789129386,
+    0.6548831257834301,
+    0.6935325903444541,
+    0.7289192576681971,
+    0.7644383919397104,
+    0.7970679330916881,
+    0.8292783703010969,
+    0.8552046573963668,
+    0.9012415939303348,
+    0.9467480990726143,
+    1.0
+   ],
+   "ys": [
+    0.06810845706907682,
+    0.06810845706907682,
+    0.10616327847692804,
+    0.11491284699806327,
+    0.1313065976714101,
+    0.16902768834513845,
+    0.175540496934495,
+    0.19276719405876655,
+    0.22745604129698338,
+    0.23402194964493223,
+    0.2452404001290739,
+    0.2536302032913843,
+    0.28654404646660214,
+    0.2998708844415752,
+    0.32483459738583187,
+    0.34065934065934067,
+    0.35106382978723405,
+    0.38469023678235487,
+    0.41508828250401286,
+    0.4431891542930923,
+    0.46014843497902547,
+    0.4961165048543689,
+    0.49943612050910263,
+    0.5262988060664731,
+    0.560219567323216,
+    0.6174951581665591,
+    0.6339890357949048,
+    0.7083333333333334,
+    0.7224911261697322,
+    0.7747660535656663,
+    0.8,
+    0.8520671834625323,
+    0.8654838709677419,
+    0.8861946330423537,
+    0.9046223958333334,
+    0.9361179361179361,
+    0.9913178294573644,
+    0.9913178294573644
+   ]
+  }
+ },
+ "curves": {
+  "precision_coverage": [
+   {
+    "threshold": 0.0,
+    "edges": 66520,
+    "precision": 0.518535778713169,
+    "coverage": 0.96652330582355
+   },
+   {
+    "threshold": 0.025,
+    "edges": 66520,
+    "precision": 0.518535778713169,
+    "coverage": 0.96652330582355
+   },
+   {
+    "threshold": 0.05,
+    "edges": 66520,
+    "precision": 0.518535778713169,
+    "coverage": 0.96652330582355
+   },
+   {
+    "threshold": 0.075,
+    "edges": 65699,
+    "precision": 0.5241480083410707,
+    "coverage": 0.9545943275601534
+   },
+   {
+    "threshold": 0.1,
+    "edges": 64913,
+    "precision": 0.5294779165960594,
+    "coverage": 0.9431738928280832
+   },
+   {
+    "threshold": 0.125,
+    "edges": 62385,
+    "precision": 0.5464454596457482,
+    "coverage": 0.9064425200511449
+   },
+   {
+    "threshold": 0.15,
+    "edges": 61292,
+    "precision": 0.553873262415976,
+    "coverage": 0.8905614320585842
+   },
+   {
+    "threshold": 0.175,
+    "edges": 59238,
+    "precision": 0.5679968938856815,
+    "coverage": 0.8607171916773219
+   },
+   {
+    "threshold": 0.2,
+    "edges": 57358,
+    "precision": 0.5806862163952718,
+    "coverage": 0.8334011391375101
+   },
+   {
+    "threshold": 0.225,
+    "edges": 55870,
+    "precision": 0.5906210846608198,
+    "coverage": 0.8117807741485529
+   },
+   {
+    "threshold": 0.25,
+    "edges": 51480,
+    "precision": 0.6200854700854701,
+    "coverage": 0.7479948855050563
+   },
+   {
+    "threshold": 0.275,
+    "edges": 49951,
+    "precision": 0.6303377309763568,
+    "coverage": 0.7257787980936883
+   },
+   {
+    "threshold": 0.3,
+    "edges": 48170,
+    "precision": 0.6432011625493046,
+    "coverage": 0.6999011972567709
+   },
+   {
+    "threshold": 0.325,
+    "edges": 45743,
+    "precision": 0.6609098659904248,
+    "coverage": 0.6646373358130885
+   },
+   {
+    "threshold": 0.35,
+    "edges": 42031,
+    "precision": 0.6871832694915657,
+    "coverage": 0.6107026618621411
+   },
+   {
+    "threshold": 0.375,
+    "edges": 40931,
+    "precision": 0.6952432141897339,
+    "coverage": 0.5947198651633151
+   },
+   {
+    "threshold": 0.4,
+    "edges": 39689,
+    "precision": 0.703393887475119,
+    "coverage": 0.5766738347088225
+   },
+   {
+    "threshold": 0.425,
+    "edges": 38183,
+    "precision": 0.7148469214048137,
+    "coverage": 0.5547919330466117
+   },
+   {
+    "threshold": 0.45,
+    "edges": 36197,
+    "precision": 0.7301986352460149,
+    "coverage": 0.5259357200976403
+   },
+   {
+    "threshold": 0.475,
+    "edges": 34267,
+    "precision": 0.7437476289141156,
+    "coverage": 0.49789317679879114
+   },
+   {
+    "threshold": 0.5,
+    "edges": 30244,
+    "precision": 0.7738063748181457,
+    "coverage": 0.43943973032663025
+   },
+   {
+    "threshold": 0.525,
+    "edges": 27793,
+    "precision": 0.798402475443457,
+    "coverage": 0.4038271533186098
+   },
+   {
+    "threshold": 0.55,
+    "edges": 26542,
+    "precision": 0.8096601612538618,
+    "coverage": 0.3856503545274904
+   },
+   {
+    "threshold": 0.575,
+    "edges": 25566,
+    "precision": 0.8188218727998122,
+    "coverage": 0.3714692549110775
+   },
+   {
+    "threshold": 0.6,
+    "edges": 24841,
+    "precision": 0.8251278128899803,
+    "coverage": 0.36093513890503315
+   },
+   {
+    "threshold": 0.625,
+    "edges": 23570,
+    "precision": 0.837165888841748,
+    "coverage": 0.3424677438102987
+   },
+   {
+    "threshold": 0.65,
+    "edges": 22246,
+    "precision": 0.8495010338937337,
+    "coverage": 0.3232302685109845
+   },
+   {
+    "threshold": 0.675,
+    "edges": 21605,
+    "precision": 0.8544781300624855,
+    "coverage": 0.3139166569801232
+   },
+   {
+    "threshold": 0.7,
+    "edges": 20982,
+    "precision": 0.8604518158421505,
+    "coverage": 0.3048645821225154
+   },
+   {
+    "threshold": 0.725,
+    "edges": 18944,
+    "precision": 0.8765308277027027,
+    "coverage": 0.2752528187841451
+   },
+   {
+    "threshold": 0.75,
+    "edges": 18077,
+    "precision": 0.8847153841898545,
+    "coverage": 0.26265546902243403
+   },
+   {
+    "threshold": 0.775,
+    "edges": 17048,
+    "precision": 0.8929493195682778,
+    "coverage": 0.24770428920144136
+   },
+   {
+    "threshold": 0.8,
+    "edges": 15312,
+    "precision": 0.9068051201671892,
+    "coverage": 0.2224805300476578
+   },
+   {
+    "threshold": 0.825,
+    "edges": 14352,
+    "precision": 0.9147157190635451,
+    "coverage": 0.20853190747413694
+   },
+   {
+    "threshold": 0.85,
+    "edges": 13434,
+    "precision": 0.9207979752865862,
+    "coverage": 0.1951935371382076
+   },
+   {
+    "threshold": 0.875,
+    "edges": 10272,
+    "precision": 0.936623831775701,
+    "coverage": 0.14925026153667326
+   },
+   {
+    "threshold": 0.9,
+    "edges": 7682,
+    "precision": 0.9501431918771154,
+    "coverage": 0.11161804021852842
+   },
+   {
+    "threshold": 0.925,
+    "edges": 5012,
+    "precision": 0.9592976855546688,
+    "coverage": 0.07282343368592352
+   },
+   {
+    "threshold": 0.95,
+    "edges": 2604,
+    "precision": 0.9838709677419355,
+    "coverage": 0.037835638730675344
+   },
+   {
+    "threshold": 0.975,
+    "edges": 1813,
+    "precision": 0.9922779922779923,
+    "coverage": 0.026342554922701385
+   }
+  ],
+  "reliability": [
+   {
+    "bin_lo": 0.0,
+    "mean_confidence": 0.0784201617921593,
+    "accuracy": 0.07654013690105788,
+    "n": 1607
+   },
+   {
+    "bin_lo": 0.1,
+    "mean_confidence": 0.14901171409662475,
+    "accuracy": 0.14070152217074786,
+    "n": 7555
+   },
+   {
+    "bin_lo": 0.2,
+    "mean_confidence": 0.2468431758815847,
+    "accuracy": 0.25293861558554637,
+    "n": 9188
+   },
+   {
+    "bin_lo": 0.3,
+    "mean_confidence": 0.3407119915104351,
+    "accuracy": 0.36151397240891403,
+    "n": 8481
+   },
+   {
+    "bin_lo": 0.4,
+    "mean_confidence": 0.46273343568025416,
+    "accuracy": 0.477924827951297,
+    "n": 9445
+   },
+   {
+    "bin_lo": 0.5,
+    "mean_confidence": 0.5364029057930779,
+    "accuracy": 0.5378493429576161,
+    "n": 5403
+   },
+   {
+    "bin_lo": 0.6,
+    "mean_confidence": 0.6407607929515419,
+    "accuracy": 0.6330655610261726,
+    "n": 3859
+   },
+   {
+    "bin_lo": 0.7,
+    "mean_confidence": 0.7490974426807759,
+    "accuracy": 0.7352733686067019,
+    "n": 5670
+   },
+   {
+    "bin_lo": 0.8,
+    "mean_confidence": 0.8618509305373525,
+    "accuracy": 0.8631716906946265,
+    "n": 7630
+   },
+   {
+    "bin_lo": 0.9,
+    "mean_confidence": 0.9425960426972142,
+    "accuracy": 0.9501431918771154,
+    "n": 7682
+   }
+  ],
+  "reliability_raw": [
+   {
+    "bin_lo": 0.0,
+    "mean_confidence": 0.07043346707576115,
+    "accuracy": 0.09865470852017937,
+    "n": 4237
+   },
+   {
+    "bin_lo": 0.1,
+    "mean_confidence": 0.15128224250052444,
+    "accuracy": 0.19362282357877073,
+    "n": 9534
+   },
+   {
+    "bin_lo": 0.2,
+    "mean_confidence": 0.2503588211586902,
+    "accuracy": 0.3044836272040302,
+    "n": 9925
+   },
+   {
+    "bin_lo": 0.3,
+    "mean_confidence": 0.35134893707937187,
+    "accuracy": 0.44290139942313855,
+    "n": 9361
+   },
+   {
+    "bin_lo": 0.4,
+    "mean_confidence": 0.44302538165216154,
+    "accuracy": 0.5160507918390641,
+    "n": 7009
+   },
+   {
+    "bin_lo": 0.5,
+    "mean_confidence": 0.5494064833812065,
+    "accuracy": 0.6148953631514157,
+    "n": 4874
+   },
+   {
+    "bin_lo": 0.6,
+    "mean_confidence": 0.6510595886141699,
+    "accuracy": 0.7107832952420527,
+    "n": 4813
+   },
+   {
+    "bin_lo": 0.7,
+    "mean_confidence": 0.753241004776225,
+    "accuracy": 0.8227489828409694,
+    "n": 5653
+   },
+   {
+    "bin_lo": 0.8,
+    "mean_confidence": 0.850005803384142,
+    "accuracy": 0.913718361068382,
+    "n": 7151
+   },
+   {
+    "bin_lo": 0.9,
+    "mean_confidence": 0.9282904365379763,
+    "accuracy": 0.9692152409790563,
+    "n": 3963
+   }
+  ]
+ },
+ "breakdowns": {
+  "noise_level": [
+   {
+    "noise_level": "clean",
+    "precision": 0.9789,
+    "coverage": 0.1668,
+    "edges": 1517,
+    "answered_any": 0.3925
+   },
+   {
+    "noise_level": "messy",
+    "precision": 0.9419,
+    "coverage": 0.0647,
+    "edges": 1497,
+    "answered_any": 0.1198
+   },
+   {
+    "noise_level": "moderate",
+    "precision": 0.9423,
+    "coverage": 0.1033,
+    "edges": 2944,
+    "answered_any": 0.2302
+   },
+   {
+    "noise_level": "very_messy",
+    "precision": 0.9552,
+    "coverage": 0.0496,
+    "edges": 402,
+    "answered_any": 0.0929
+   }
+  ],
+  "size_bucket": [
+   {
+    "size_bucket": "100-199",
+    "precision": 0.9626,
+    "coverage": 0.1876,
+    "edges": 2964,
+    "answered_any": 0.3022
+   },
+   {
+    "size_bucket": "1000+",
+    "precision": 0.9271,
+    "coverage": 0.0262,
+    "edges": 247,
+    "answered_any": 0.0799
+   },
+   {
+    "size_bucket": "200-499",
+    "precision": 0.9485,
+    "coverage": 0.0903,
+    "edges": 2078,
+    "answered_any": 0.1976
+   },
+   {
+    "size_bucket": "500-999",
+    "precision": 0.9337,
+    "coverage": 0.0521,
+    "edges": 1071,
+    "answered_any": 0.1739
+   }
+  ],
+  "industry": [
+   {
+    "industry": "Banking",
+    "precision": 0.9543,
+    "coverage": 0.0899,
+    "edges": 722,
+    "answered_any": 0.2012
+   },
+   {
+    "industry": "EdTech",
+    "precision": 0.9524,
+    "coverage": 0.0963,
+    "edges": 588,
+    "answered_any": 0.1809
+   },
+   {
+    "industry": "Fintech",
+    "precision": 0.9515,
+    "coverage": 0.1204,
+    "edges": 908,
+    "answered_any": 0.2066
+   },
+   {
+    "industry": "Healthcare",
+    "precision": 0.9549,
+    "coverage": 0.0903,
+    "edges": 621,
+    "answered_any": 0.2079
+   },
+   {
+    "industry": "Logistics",
+    "precision": 0.9582,
+    "coverage": 0.0762,
+    "edges": 670,
+    "answered_any": 0.1605
+   },
+   {
+    "industry": "Manufacturing",
+    "precision": 0.9615,
+    "coverage": 0.0887,
+    "edges": 988,
+    "answered_any": 0.2529
+   },
+   {
+    "industry": "Media",
+    "precision": 0.9417,
+    "coverage": 0.0938,
+    "edges": 858,
+    "answered_any": 0.1921
+   },
+   {
+    "industry": "Retail",
+    "precision": 0.9332,
+    "coverage": 0.0947,
+    "edges": 434,
+    "answered_any": 0.1941
+   },
+   {
+    "industry": "SaaS",
+    "precision": 0.9492,
+    "coverage": 0.0864,
+    "edges": 571,
+    "answered_any": 0.1621
+   }
+  ],
+  "true_level": [
+   {
+    "true_level": 0,
+    "precision": 0.0,
+    "coverage": 0.0,
+    "edges": 1,
+    "answered_any": 0.0
+   },
+   {
+    "true_level": 1,
+    "precision": 0.9938,
+    "coverage": 0.8912,
+    "edges": 975,
+    "answered_any": 0.8921
+   },
+   {
+    "true_level": 2,
+    "precision": 0.9935,
+    "coverage": 0.4513,
+    "edges": 153,
+    "answered_any": 0.6372
+   },
+   {
+    "true_level": 3,
+    "precision": 0.9631,
+    "coverage": 0.3391,
+    "edges": 839,
+    "answered_any": 0.5655
+   },
+   {
+    "true_level": 4,
+    "precision": 0.9532,
+    "coverage": 0.2377,
+    "edges": 1882,
+    "answered_any": 0.343
+   },
+   {
+    "true_level": 5,
+    "precision": 0.9283,
+    "coverage": 0.044,
+    "edges": 2510,
+    "answered_any": 0.1464
+   }
+  ],
+  "is_contractor": [
+   {
+    "is_contractor": false,
+    "precision": 0.9523,
+    "coverage": 0.0941,
+    "edges": 6264,
+    "answered_any": 0.2005
+   },
+   {
+    "is_contractor": true,
+    "precision": 0.9167,
+    "coverage": 0.0419,
+    "edges": 96,
+    "answered_any": 0.1367
+   }
+  ],
+  "heldout_title": [
+   {
+    "heldout_title": false,
+    "precision": 0.9517,
+    "coverage": 0.0948,
+    "edges": 6360,
+    "answered_any": 0.2033
+   },
+   {
+    "heldout_title": true,
+    "precision": 0.0,
+    "coverage": 0.0,
+    "edges": 0,
+    "answered_any": 0.0102
+   }
+  ]
+ },
+ "ablations": {
+  "full system": {
+   "threshold": 0.91,
+   "precision": 0.9517,
+   "coverage": 0.0924,
+   "f1": 0.161,
+   "answered_any": 0.1984,
+   "rollup_precision": 0.9706
+  },
+  "no specialty signal": {
+   "threshold": 0.91,
+   "precision": 0.9599,
+   "coverage": 0.0645,
+   "f1": 0.1163,
+   "answered_any": 0.1521,
+   "rollup_precision": 0.9872
+  },
+  "no location signal": {
+   "threshold": 0.92,
+   "precision": 0.9616,
+   "coverage": 0.0731,
+   "f1": 0.131,
+   "answered_any": 0.1549,
+   "rollup_precision": 0.9649
+  },
+  "no stale-record signal": {
+   "threshold": 0.92,
+   "precision": 0.9641,
+   "coverage": 0.0595,
+   "f1": 0.1082,
+   "answered_any": 0.1466,
+   "rollup_precision": 0.9645
+  },
+  "no company-relative re-levelling": {
+   "threshold": 0.92,
+   "precision": 0.9551,
+   "coverage": 0.0757,
+   "f1": 0.1344,
+   "answered_any": 0.1565,
+   "rollup_precision": 0.9742
+  },
+  "no dedupe": {
+   "threshold": 0.91,
+   "precision": 0.9524,
+   "coverage": 0.0907,
+   "f1": 0.1583,
+   "answered_any": 0.1966,
+   "rollup_precision": 0.9719
+  },
+  "no roll-ups": {
+   "threshold": 0.91,
+   "precision": 0.9517,
+   "coverage": 0.0924,
+   "f1": 0.161,
+   "answered_any": 0.092,
+   "rollup_precision": null
+  },
+  "logistic regression confidence (16 features)": {
+   "threshold": 0.94,
+   "precision": 0.9612,
+   "coverage": 0.0517,
+   "f1": 0.0944,
+   "answered_any": 0.1134,
+   "rollup_precision": 0.9781
+  }
+ }
+}
