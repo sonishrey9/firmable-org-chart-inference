@@ -11,7 +11,7 @@
     page: 1, pageSize: 25, total: 0, q: '', industry: '', size: '', noise: '',
     payload: null, byId: new Map(), thr: 0.91, opThr: 0.91,
     rollups: true, collapse: true, unplaced: false, truth: false, dept: '',
-    expanded: new Set(), selected: null, cy: null, metrics: null, charts: {},
+    expanded: new Set(), open: new Set(), expandAll: false, foldLevel: 2, selected: null, cy: null, metrics: null, charts: {},
   };
 
   /* ---------- waking loader ---------- */
@@ -107,7 +107,7 @@
     S.byId = new Map(d.nodes.map((n) => [n.id, n]));
     S.opThr = d.threshold; S.thr = d.threshold;
     $('#thr').value = S.thr; $('#thr-out').textContent = fmt(S.thr);
-    S.expanded.clear(); S.selected = null; S.dept = '';
+    S.expanded.clear(); S.open.clear(); S.expandAll = false; S.selected = null; S.dept = '';
     const c = d.company;
     $('#c-name').textContent = c.company_name;
     $('#c-meta').textContent = [c.industry, c.country, c.size_bucket && c.size_bucket + ' band', c.noise_level && c.noise_level.replace('_', ' ') + ' data', c.split === 'test' ? 'held-out company' : c.split === 'train' ? 'training company' : null].filter(Boolean).join(' · ');
@@ -134,6 +134,11 @@
   }
   const bucket = (c) => c >= 0.9 ? '--c4' : c >= 0.8 ? '--c3' : c >= 0.6 ? '--c2' : '--c1';
 
+  // View-only folding. Nodes at or above S.foldLevel (2 = VPs, 1 = execs, 0 = CEO only) are shown;
+  // each shown node's deeper reports fold into one "+N directors" chip until the chip is opened.
+  // Inference, metrics, the answer key and Export never see this.
+  const ORPHANS = '__orphans';
+  const lvlOf = (n) => (n.level == null ? 5 : n.level);
   function buildElements() {
     const nodes = S.payload.nodes.filter((n) => !n.duplicate_of);
     const par = new Map(); const kids = new Map();
@@ -141,6 +146,7 @@
       const p = parentOf(n);
       if (p && S.byId.has(p.p)) { par.set(n.id, p); if (!kids.has(p.p)) kids.set(p.p, []); kids.get(p.p).push(n.id); }
     }
+    S.par = par;
     // department filter: keep dept members + their ancestors
     let keep = new Set(nodes.map((n) => n.id));
     if (S.dept) {
@@ -151,10 +157,27 @@
       }
     }
     const placed = (id) => par.has(id) || kids.has(id) || S.byId.get(id).status === 'root';
+    // which nodes are shown, and what folds where
+    const L = S.expandAll ? 99 : S.foldLevel;
+    const shown = new Set(); const folds = new Map(); const queue = [];
+    const fold = (at, id) => { if (!folds.has(at)) folds.set(at, []); folds.get(at).push(id); };
+    for (const n of nodes) {
+      if (!keep.has(n.id) || par.has(n.id)) continue;           // tree roots only
+      if (!placed(n.id) && !S.unplaced) continue;
+      if (n.status === 'root' || lvlOf(n) <= L || !placed(n.id) || S.open.has(ORPHANS)) { shown.add(n.id); queue.push(n.id); }
+      else fold(ORPHANS, n.id);                                  // teams whose head has no known manager
+    }
+    while (queue.length) {
+      const x = queue.shift();
+      for (const k of kids.get(x) || []) {
+        if (!keep.has(k)) continue;
+        if (lvlOf(S.byId.get(k)) <= L || S.open.has(x)) { shown.add(k); queue.push(k); } else fold(x, k);
+      }
+    }
+    const below = (id) => { let c = 0; const st = [...(kids.get(id) || [])]; while (st.length) { const k = st.pop(); if (!keep.has(k)) continue; c++; st.push(...(kids.get(k) || [])); } return c; };
     const els = []; const groups = new Map();
     for (const n of nodes) {
-      if (!keep.has(n.id)) continue;
-      if (!placed(n.id) && !S.unplaced) continue;
+      if (!shown.has(n.id)) continue;
       const p = par.get(n.id);
       const leaf = !kids.has(n.id);
       if (S.collapse && p && leaf && n.level === 5 && !S.expanded.has(p.p)) {
@@ -167,17 +190,36 @@
       const cls = [n.level === 0 ? 'ceo' : n.level === 1 ? 'exec' : n.level === 2 || n.level === 3 ? 'lead' : '',
         placed(n.id) ? '' : 'unplaced', n.stale ? 'stale' : '', p ? '' : (n.status !== 'root' ? 'nomgr' : '')].filter(Boolean).join(' ');
       els.push({ data: { id: n.id, lvl: n.level, label: `${n.name}\n${n.title || 'No title'}` }, classes: cls });
-      if (p && keep.has(p.p)) {
+      if (p && shown.has(p.p)) {
         const wrong = S.truth && !edgeCorrect(n, p);
         els.push({ data: { id: 'e:' + n.id, source: p.p, target: n.id, conf: p.conf, color: wrong ? css('--wrong') : css(bucket(p.conf)) }, classes: p.kind + (wrong ? ' wrong' : '') });
       }
     }
     for (const [gid, g] of groups) {
-      if (!keep.has(g.parent)) continue;
       const avg = g.conf / g.ids.length;
       const label = g.kind === 'edge' ? `${g.ids.length} IC${g.ids.length > 1 ? 's' : ''}` : `${g.ids.length} roll up here`;
       els.push({ data: { id: gid, label: label + (S.truth && g.wrong ? ` · ${g.wrong} wrong` : ''), group: g }, classes: 'group' + (g.kind === 'rollup' ? ' grp-rollup' : '') });
       els.push({ data: { id: 'e:' + gid, source: g.parent, target: gid, conf: avg, color: S.truth && g.wrong ? css('--wrong') : css(bucket(avg)) }, classes: g.kind });
+    }
+    const WORD = { 1: ['exec', 'execs'], 2: ['VP', 'VPs'], 3: ['director', 'directors'] };
+    for (const [at, ids] of folds) {
+      const lv = new Set(ids.map((i) => lvlOf(S.byId.get(i))));
+      const w = lv.size === 1 && WORD[[...lv][0]] ? WORD[[...lv][0]] : ['report', 'reports'];
+      const total = ids.length + ids.reduce((a, i) => a + below(i), 0);
+      const head = at === ORPHANS ? `+${ids.length} team${ids.length > 1 ? 's' : ''}, no manager` : `+${ids.length} ${w[ids.length > 1 ? 1 : 0]}`;
+      const fid = 'f:' + at;
+      // answer key: count wrong links anywhere inside the fold (the chip edge itself and everything under it)
+      let wrong = 0;
+      if (S.truth) {
+        const st = [...ids];
+        while (st.length) { const k = st.pop(); if (!keep.has(k)) continue; const p = par.get(k); if (p && !edgeCorrect(S.byId.get(k), p)) wrong++; st.push(...(kids.get(k) || [])); }
+      }
+      els.push({ data: { id: fid, fold: at, wrong, label: `${head}\n${total} ${total === 1 ? 'person' : 'people'}` + (wrong ? `\n⚠ ${wrong} wrong` : '') }, classes: 'group fold' + (wrong ? ' fold-wrong' : '') });
+      if (at !== ORPHANS) {
+        const confs = ids.map((i) => par.get(i).conf); const avg = confs.reduce((a, b) => a + b, 0) / confs.length;
+        const allRoll = ids.every((i) => par.get(i).kind === 'rollup');
+        els.push({ data: { id: 'e:' + fid, source: at, target: fid, conf: avg, color: css('--muted') }, classes: allRoll ? 'rollup' : 'edge' });
+      }
     }
     return els;
   }
@@ -189,8 +231,8 @@
   function style() {
     const ink = css('--node-ink'), node = css('--node'), line = css('--line'), muted = css('--muted'), accent = css('--accent');
     return [
-      { selector: 'node', style: { shape: 'round-rectangle', width: 204, height: 54, 'background-color': node, 'border-width': 1, 'border-color': line,
-        label: 'data(label)', 'text-wrap': 'wrap', 'text-max-width': 188, 'font-family': 'IBM Plex Sans, sans-serif', 'font-size': NODE_FONT, 'min-zoomed-font-size': 6, color: ink,
+      { selector: 'node', style: { shape: 'round-rectangle', width: 180, height: 56, 'background-color': node, 'border-width': 1, 'border-color': line,
+        label: 'data(label)', 'text-wrap': 'wrap', 'text-max-width': 168, 'font-family': 'IBM Plex Sans, sans-serif', 'font-size': NODE_FONT, 'min-zoomed-font-size': 6, color: ink,
         'text-valign': 'center', 'text-halign': 'center', 'line-height': 1.25 } },
       { selector: 'node.ceo', style: { 'border-width': 2, 'border-color': accent, 'font-weight': 700 } },
       { selector: 'node.exec', style: { 'border-width': 1.5, 'border-color': accent } },
@@ -198,7 +240,9 @@
       { selector: 'node.nomgr', style: { 'border-style': 'dashed', 'border-color': muted, 'border-width': 1.5 } },
       { selector: 'node.unplaced', style: { 'border-style': 'dashed', 'background-opacity': 0.55 } },
       { selector: 'node.stale', style: { opacity: 0.6 } },
-      { selector: 'node.group', style: { width: 124, height: 30, shape: 'round-rectangle', 'background-color': css('--line2'), 'border-width': 0, 'font-size': 11.5, color: muted, 'font-weight': 600 } },
+      { selector: 'node.group', style: { width: 132, height: 32, shape: 'round-rectangle', 'background-color': css('--line2'), 'border-width': 0, 'font-size': NODE_FONT, color: muted, 'font-weight': 600 } },
+      { selector: 'node.fold', style: { width: 140, height: 48, 'background-color': css('--panel'), 'border-width': 1.5, 'border-style': 'dashed', 'border-color': accent, color: css('--accent'), 'text-max-width': 130 } },
+      { selector: 'node.fold-wrong', style: { 'border-color': css('--wrong'), 'border-width': 2.5, 'border-style': 'solid', height: 66 } },
       { selector: 'node.grp-rollup', style: { 'border-width': 1, 'border-style': 'dashed', 'border-color': muted } },
       { selector: 'node:selected', style: { 'border-width': 2.5, 'border-color': accent, 'overlay-opacity': 0 } },
       { selector: 'node.dim', style: { opacity: 0.25 } },
@@ -209,66 +253,98 @@
     ];
   }
 
-  function draw(animate, refit = animate) {
+  // view: 'auto' = pick the fold level so the first screen fits, then fit (load, upload, company change, Collapse)
+  //       'fit'  = fit what is shown now, keeping the fold state (filters, Fit button, Expand all)
+  //       'keep' = keep the user's viewport (slider drag)
+  //       {expand: id} = keep the viewport, then pan just enough to bring the opened chip's subtree into view
+  function layout() {
+    S.cy.batch(() => { S.cy.elements().remove(); S.cy.add(buildElements()); });
+    S.cy.layout({ name: 'dagre', rankDir: 'TB', nodeSep: 12, rankSep: 56, edgeSep: 6, animate: false, fit: false }).run();
+  }
+  function draw(animate, view = animate ? 'auto' : 'keep') {
     if (!S.payload) return;
-    const els = buildElements();
+    if (view === true) view = 'fit';
     if (!S.cy) {
       S.cy = cytoscape({ container: $('#cy'), elements: [], style: style(), minZoom: 0.05, maxZoom: 2.5, boxSelectionEnabled: false });
       S.cy.on('tap', 'node', (ev) => onTap(ev.target));
       S.cy.on('tap', (ev) => { if (ev.target === S.cy) { hideDetails(); clearDim(); } });
     }
-    S.cy.batch(() => { S.cy.elements().remove(); S.cy.add(els); });
     S.cy.resize();
     const vp = { zoom: S.cy.zoom(), pan: { ...S.cy.pan() } };
-    S.cy.layout({ name: 'dagre', rankDir: 'TB', nodeSep: 16, rankSep: 60, edgeSep: 6, animate: false, fit: true, padding: 24 }).run();
-    if (refit) readableView(); else S.cy.viewport(vp);   // keep the user's view while dragging the slider or expanding a group
+    let anchor = null;
+    if (view && view.expand) { const a = S.cy.getElementById(view.expand); if (a.length) anchor = { id: view.expand, r: { ...a.renderedPosition() } }; }
+    if (view === 'auto' && !S.expandAll) {
+      for (const L of [2, 1, 0]) { S.foldLevel = L; layout(); if (fitZoom() >= MIN_ZOOM) break; }
+    } else layout();
+    if (view === 'auto' || view === 'fit') readableView();
+    else if (anchor) revealSubtree(anchor, vp.zoom);
+    else S.cy.viewport(vp);
     if (S.selected && S.cy.getElementById(S.selected).length) S.cy.getElementById(S.selected).select();
     if (animate) { const el = $('#cy'); el.classList.remove('enter'); void el.offsetWidth; el.classList.add('enter'); }
+    $('#expand-all').textContent = S.expandAll ? 'Collapse' : 'Expand all';
+    $('#expand-all').setAttribute('aria-pressed', S.expandAll);
     updateStats();
     const c = S.payload.company;
     $('#export').href = c.company_id === 'UPLOAD' ? '#' : `/api/company/${c.company_id}/export.csv?threshold=${S.thr}`;
   }
 
-  // Initial view: fit every visible level 0-3 node (CEO, execs, VPs, directors) with 40px padding.
-  // If that would shrink labels below MIN_READABLE_PX, stay at the readable zoom and left-align the
-  // block instead, so the leftmost leader is fully on screen and the rest is one drag away.
-  const MIN_READABLE_PX = 10;          // rendered label size we refuse to go below on load
+  // Fit what is shown with 40px padding, never below MIN_READABLE_PX labels, and always keep the CEO on
+  // screen: centred with everything when it fits, otherwise centred on the CEO at the readable zoom.
+  const MIN_READABLE_PX = 10;
   const NODE_FONT = 13;
+  const MIN_ZOOM = MIN_READABLE_PX / NODE_FONT;
   const VIEW_PAD = 40;
-  function leaders() {
-    const vis = S.cy.nodes(':visible');
-    const top = vis.filter((n) => n.data('lvl') != null && n.data('lvl') <= 3);
-    return top.length ? top : vis;
+  const shownBox = () => S.cy.nodes(':visible').boundingBox({ includeLabels: true, includeOverlays: false });
+  function fitZoom() {
+    const bb = shownBox();
+    return Math.min((S.cy.width() - 2 * VIEW_PAD) / bb.w, (S.cy.height() - 2 * VIEW_PAD) / bb.h, 1.15);
+  }
+  function rootNode() {
+    let r = S.cy.nodes('.ceo:visible').first();
+    if (!r.length) r = S.cy.nodes(':visible').filter((n) => !n.hasClass('group')).sort((a, b) => a.position('y') - b.position('y') || a.position('x') - b.position('x')).first();
+    return r;
   }
   function readableView() {
     const cy = S.cy, W = cy.width(), H = cy.height();
-    const set = leaders();
-    if (!set.length || !W || !H) return;
-    const bb = set.boundingBox({ includeLabels: true, includeOverlays: false });
-    const minZ = MIN_READABLE_PX / NODE_FONT;
-    let z = Math.min((W - 2 * VIEW_PAD) / bb.w, (H - 2 * VIEW_PAD) / bb.h, 1.15);
-    let x;
-    if (z >= minZ) {
-      x = (W - bb.w * z) / 2 - bb.x1 * z;        // fits: centre the block horizontally
-      S.viewMode = 'fit';
-    } else {
-      z = minZ;
-      x = VIEW_PAD - bb.x1 * z;                  // too wide: left-align at the readable zoom
-      S.viewMode = 'left-aligned';
-    }
-    cy.viewport({ zoom: z, pan: { x, y: VIEW_PAD - bb.y1 * z } });
+    if (!W || !H || !cy.nodes(':visible').length) return;
+    const bb = shownBox();
+    let z = fitZoom(), x;
+    if (z >= MIN_ZOOM) { x = (W - bb.w * z) / 2 - bb.x1 * z; S.viewMode = 'fit'; }
+    else { z = MIN_ZOOM; const r = rootNode(); x = W / 2 - r.position('x') * z; S.viewMode = 'ceo-centred'; }
+    const y = bb.h * z <= H - 2 * VIEW_PAD ? (H - bb.h * z) / 2 - bb.y1 * z : VIEW_PAD - bb.y1 * z;
+    cy.viewport({ zoom: z, pan: { x, y } });
   }
-  // For checks: which visible level 0-3 nodes are not fully inside the canvas?
+  // After opening a chip: the clicked parent stays where it was, then we pan (not zoom) just enough to
+  // bring its newly shown reports into view, without ever pushing the parent off screen.
+  function revealSubtree(anchor, z) {
+    const cy = S.cy, W = cy.width(), H = cy.height(), pad = 24;
+    const a = cy.getElementById(anchor.id);
+    cy.viewport({ zoom: z, pan: { x: anchor.r.x - a.position('x') * z, y: anchor.r.y - a.position('y') * z } });
+    const sub = a.union(a.outgoers('node')).union(a.outgoers('node').outgoers('node'));
+    const b = sub.renderedBoundingBox({ includeLabels: true });
+    let dx = 0, dy = 0;
+    if (b.x2 > W - pad) dx = W - pad - b.x2;
+    if (b.x1 + dx < pad) dx = pad - b.x1;
+    if (b.y2 > H - pad) dy = H - pad - b.y2;
+    if (b.y1 + dy < pad) dy = pad - b.y1;
+    const ar = a.renderedBoundingBox();                       // keep the parent itself on screen
+    dx = Math.max(Math.min(dx, W - pad - ar.x2), pad - ar.x1);
+    dy = Math.max(Math.min(dy, H - pad - ar.y2), pad - ar.y1);
+    if (dx || dy) cy.animate({ panBy: { x: dx, y: dy } }, { duration: 280, easing: 'ease-out-cubic' });
+  }
+  // For checks: which visible nodes are not fully inside the canvas, and the smallest rendered label.
   function viewReport() {
-    const cy = S.cy, W = cy.width(), H = cy.height();
-    const out = [];
-    leaders().forEach((n) => {
+    const cy = S.cy, W = cy.width(), H = cy.height(), z = cy.zoom();
+    const vis = cy.nodes(':visible'); const out = []; let minPx = Infinity;
+    vis.forEach((n) => {
       const b = n.renderedBoundingBox({ includeLabels: true });
       if (b.x1 < 0 || b.y1 < 0 || b.x2 > W || b.y2 > H) out.push(n.data('label').split('\n')[0]);
+      minPx = Math.min(minPx, n.numericStyle('font-size') * z);
     });
-    const xs = leaders().map((n) => n.renderedBoundingBox({ includeLabels: true }).x1);
-    return { mode: S.viewMode, zoom: +cy.zoom().toFixed(3), labelPx: +(NODE_FONT * cy.zoom()).toFixed(1),
-      canvas: [W, H], leaders: leaders().length, outside: out, leftmostX: Math.round(Math.min(...xs)) };
+    const r = rootNode(), rb = r.renderedBoundingBox();
+    return { mode: S.viewMode, foldLevel: S.expandAll ? 'all' : S.foldLevel, zoom: +z.toFixed(3), labelPx: +minPx.toFixed(1),
+      canvas: [W, H], visible: vis.length, chips: vis.filter('.fold').length, outside: out,
+      ceoOnScreen: rb.x1 >= 0 && rb.x2 <= W && rb.y1 >= 0 && rb.y2 <= H, animating: cy.animated() };
   }
 
   function updateStats() {
@@ -289,7 +365,9 @@
   /* ---------- details ---------- */
   function onTap(el) {
     const g = el.data('group');
-    if (g) { S.expanded.add(g.parent); draw(false); focus(g.parent); return; }
+    if (g) { S.expanded.add(g.parent); draw(false, { expand: g.parent }); return; }
+    const f = el.data('fold');
+    if (f) { S.open.add(f); draw(false, f === ORPHANS ? 'keep' : { expand: f }); return; }
     S.selected = el.id(); showDetails(S.byId.get(el.id())); highlight(el);
   }
   function highlight(el) {
@@ -303,6 +381,16 @@
     if (!el.length) return;
     S.cy.animate({ center: { eles: el }, zoom: Math.max(S.cy.zoom(), 0.8) }, { duration: 300, easing: 'ease-out-cubic' });
     el.select(); S.selected = id; showDetails(S.byId.get(id)); highlight(el);
+  }
+  // Open every fold and IC group on the way from the top to this person, then draw.
+  function revealPerson(id) {
+    if (S.cy.getElementById(id).length) return;
+    const n = S.byId.get(id); if (!n) return;
+    let cur = id, top = id;
+    for (let i = 0; i < 15; i++) { const p = S.par.get(cur); if (!p) break; S.open.add(p.p); S.expanded.add(p.p); top = cur = p.p; }
+    S.open.add(ORPHANS);
+    if (!S.par.get(id) && !(S.payload.nodes.some((x) => S.par.get(x.id)?.p === id)) && n.status !== 'root') { S.unplaced = true; $('#t-unplaced').checked = true; }
+    draw(false, 'keep');
   }
   function personLink(id) {
     const p = S.byId.get(id);
@@ -450,15 +538,21 @@
     $('#thr').addEventListener('change', () => draw(false, true));   // refit once the slider is released
     $('#thr-reset').addEventListener('click', () => { S.thr = S.opThr; $('#thr').value = S.thr; $('#thr-out').textContent = fmt(S.thr); draw(false, true); });
     $('#t-rollup').addEventListener('change', (e) => { S.rollups = e.target.checked; draw(false, true); });
-    $('#t-collapse').addEventListener('change', (e) => { S.collapse = e.target.checked; S.expanded.clear(); draw(false, true); });
+    $('#t-collapse').addEventListener('change', (e) => { S.collapse = e.target.checked; draw(false, true); });
     $('#t-unplaced').addEventListener('change', (e) => { S.unplaced = e.target.checked; draw(false, true); });
     $('#t-truth').addEventListener('change', (e) => { S.truth = e.target.checked; document.body.classList.toggle('truth', S.truth); draw(false); if (S.selected) showDetails(S.byId.get(S.selected)); });
     $('#f-dept').addEventListener('change', (e) => { S.dept = e.target.value; draw(false, true); });
-    $('#fit').addEventListener('click', () => S.cy && S.cy.animate({ fit: { padding: 24 } }, { duration: 250 }));
+    $('#fit').addEventListener('click', () => S.cy && readableView());
+    $('#expand-all').addEventListener('click', () => {
+      if (!S.payload) return;
+      if (S.expandAll) { S.expandAll = false; S.open.clear(); S.expanded.clear(); draw(false, 'auto'); }
+      else { S.expandAll = true; draw(false, 'fit'); }
+    });
     S.viewReport = viewReport; S.readableView = readableView;
+    S.fitLevels = () => { const keep = S.foldLevel, out = {}; for (const L of [2, 1, 0]) { S.foldLevel = L; layout(); const bb = shownBox(); out[L] = { fitZoom: +fitZoom().toFixed(3), w: Math.round(bb.w), h: Math.round(bb.h) }; } S.foldLevel = keep; draw(false, 'fit'); return out; };
     window.orgchart = S; // handy for debugging, screenshot scripts and scripts/check_view.py
     $('#d-close').addEventListener('click', () => { hideDetails(); clearDim(); });
-    $('#d-body').addEventListener('click', (e) => { const b = e.target.closest('[data-focus]'); if (!b) return; const id = b.dataset.focus; if (!S.cy.getElementById(id).length) { const p = parentOf(S.byId.get(id)); if (p) S.expanded.add(p.p); S.unplaced = true; $('#t-unplaced').checked = true; draw(false); } focus(id); });
+    $('#d-body').addEventListener('click', (e) => { const b = e.target.closest('[data-focus]'); if (!b) return; const id = b.dataset.focus; revealPerson(id); focus(id); });
     $('#more-controls').addEventListener('click', (e) => { const open = $('#toolbar').classList.toggle('open'); e.currentTarget.setAttribute('aria-expanded', open); requestAnimationFrame(() => S.cy && S.cy.resize()); });
     $('#open-picker').addEventListener('click', openPicker);
     $('#scrim').addEventListener('click', closePicker);
