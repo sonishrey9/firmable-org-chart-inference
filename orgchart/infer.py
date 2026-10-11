@@ -265,7 +265,9 @@ def infer_company(df: pd.DataFrame, cfg: Config | None = None, ref_date: pd.Time
         else:
             o["confidence"] = o["raw_conf"]
         o["proposed_manager_id"] = o.get("manager_id")
-        if not cfg.always_guess and o["confidence"] < cfg.threshold:
+        if o.get("is_root"):
+            o["status"] = "root"
+        elif not cfg.always_guess and o["confidence"] < cfg.threshold:
             o["manager_id"] = None
             o["status"] = "abstain" if o.get("proposed_manager_id") else "unresolved"
         else:
