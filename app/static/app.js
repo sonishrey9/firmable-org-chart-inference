@@ -350,7 +350,6 @@
       ...(m.ic_identifiability ? [['IC ceiling', pct(m.ic_identifiability.by_team), 'ICs placeable even with perfect titles']] : []),
       ['Threshold', fmt(op.threshold), 'picked on train for 95% precision'],
       ['Guess everyone', pct(m.naive_always_guess_test.precision), 'precision with no abstaining'],
-      ['F1', fmt(t.f1, 3), 'precision first, by design'],
     ];
     $('#m-strip').innerHTML = strip.map(([k, v, s]) => `<div><dt>${k}</dt><dd>${v}<small>${s}</small></dd></div>`).join('');
     const ink = css('--ink'), muted = css('--muted'), line = css('--line'), accent = css('--accent'), c2 = css('--c1');
