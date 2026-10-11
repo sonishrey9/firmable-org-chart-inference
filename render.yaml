@@ -1,0 +1,13 @@
+# Render Blueprint: one free web service. Precomputed results are committed (data/app, reports),
+# so nothing heavy runs at build time or at boot.
+services:
+  - type: web
+    name: org-chart-inference
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.7
