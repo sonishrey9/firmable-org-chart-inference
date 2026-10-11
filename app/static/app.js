@@ -166,7 +166,7 @@
       }
       const cls = [n.level === 0 ? 'ceo' : n.level === 1 ? 'exec' : n.level === 2 || n.level === 3 ? 'lead' : '',
         placed(n.id) ? '' : 'unplaced', n.stale ? 'stale' : '', p ? '' : (n.status !== 'root' ? 'nomgr' : '')].filter(Boolean).join(' ');
-      els.push({ data: { id: n.id, label: `${n.name}\n${n.title || 'No title'}` }, classes: cls });
+      els.push({ data: { id: n.id, lvl: n.level, label: `${n.name}\n${n.title || 'No title'}` }, classes: cls });
       if (p && keep.has(p.p)) {
         const wrong = S.truth && !edgeCorrect(n, p);
         els.push({ data: { id: 'e:' + n.id, source: p.p, target: n.id, conf: p.conf, color: wrong ? css('--wrong') : css(bucket(p.conf)) }, classes: p.kind + (wrong ? ' wrong' : '') });
@@ -209,7 +209,7 @@
     ];
   }
 
-  function draw(animate) {
+  function draw(animate, refit = animate) {
     if (!S.payload) return;
     const els = buildElements();
     if (!S.cy) {
@@ -221,7 +221,7 @@
     S.cy.resize();
     const vp = { zoom: S.cy.zoom(), pan: { ...S.cy.pan() } };
     S.cy.layout({ name: 'dagre', rankDir: 'TB', nodeSep: 16, rankSep: 60, edgeSep: 6, animate: false, fit: true, padding: 24 }).run();
-    if (animate) readableView(); else S.cy.viewport(vp);   // keep the user's zoom while filtering
+    if (refit) readableView(); else S.cy.viewport(vp);   // keep the user's view while dragging the slider or expanding a group
     if (S.selected && S.cy.getElementById(S.selected).length) S.cy.getElementById(S.selected).select();
     if (animate) { const el = $('#cy'); el.classList.remove('enter'); void el.offsetWidth; el.classList.add('enter'); }
     updateStats();
@@ -229,31 +229,46 @@
     $('#export').href = c.company_id === 'UPLOAD' ? '#' : `/api/company/${c.company_id}/export.csv?threshold=${S.thr}`;
   }
 
-  // Initial view: fit the top three ranks of the tree (with padding), never below a readable zoom,
-  // and keep the root fully on screen.
+  // Initial view: fit every visible level 0-3 node (CEO, execs, VPs, directors) with 40px padding.
+  // If that would shrink labels below MIN_READABLE_PX, stay at the readable zoom and left-align the
+  // block instead, so the leftmost leader is fully on screen and the rest is one drag away.
   const MIN_READABLE_PX = 10;          // rendered label size we refuse to go below on load
   const NODE_FONT = 13;
+  const VIEW_PAD = 40;
+  function leaders() {
+    const vis = S.cy.nodes(':visible');
+    const top = vis.filter((n) => n.data('lvl') != null && n.data('lvl') <= 3);
+    return top.length ? top : vis;
+  }
   function readableView() {
-    const cy = S.cy;
-    const vis = cy.nodes(':visible');
-    const ys = [...new Set(vis.map((n) => Math.round(n.position('y'))))].sort((a, b) => a - b);
-    const top = vis.filter((n) => Math.round(n.position('y')) <= (ys[2] ?? ys[ys.length - 1]));
-    cy.fit(top, 40);
+    const cy = S.cy, W = cy.width(), H = cy.height();
+    const set = leaders();
+    if (!set.length || !W || !H) return;
+    const bb = set.boundingBox({ includeLabels: true, includeOverlays: false });
     const minZ = MIN_READABLE_PX / NODE_FONT;
-    if (cy.zoom() > 1.15) cy.zoom(1.15);
-    if (cy.zoom() < minZ) cy.zoom(minZ);
-    // root = the CEO if we have one, else the top-most node (uploads may not mark a CEO)
-    let root = cy.nodes('.ceo').first();
-    if (!root.length) root = top.sort((a, b) => a.position('y') - b.position('y') || a.position('x') - b.position('x')).first();
-    const bb = top.boundingBox();
-    const z = cy.zoom();
-    const cx = root.length ? root.position('x') : (bb.x1 + bb.x2) / 2;
-    cy.pan({ x: cy.width() / 2 - cx * z, y: 32 - bb.y1 * z });
-    if (root.length) { // never clip the root, even on a narrow canvas
-      const rb = root.renderedBoundingBox(), pad = 12;
-      if (rb.x1 < pad) cy.panBy({ x: pad - rb.x1, y: 0 });
-      else if (rb.x2 > cy.width() - pad) cy.panBy({ x: cy.width() - pad - rb.x2, y: 0 });
+    let z = Math.min((W - 2 * VIEW_PAD) / bb.w, (H - 2 * VIEW_PAD) / bb.h, 1.15);
+    let x;
+    if (z >= minZ) {
+      x = (W - bb.w * z) / 2 - bb.x1 * z;        // fits: centre the block horizontally
+      S.viewMode = 'fit';
+    } else {
+      z = minZ;
+      x = VIEW_PAD - bb.x1 * z;                  // too wide: left-align at the readable zoom
+      S.viewMode = 'left-aligned';
     }
+    cy.viewport({ zoom: z, pan: { x, y: VIEW_PAD - bb.y1 * z } });
+  }
+  // For checks: which visible level 0-3 nodes are not fully inside the canvas?
+  function viewReport() {
+    const cy = S.cy, W = cy.width(), H = cy.height();
+    const out = [];
+    leaders().forEach((n) => {
+      const b = n.renderedBoundingBox({ includeLabels: true });
+      if (b.x1 < 0 || b.y1 < 0 || b.x2 > W || b.y2 > H) out.push(n.data('label').split('\n')[0]);
+    });
+    const xs = leaders().map((n) => n.renderedBoundingBox({ includeLabels: true }).x1);
+    return { mode: S.viewMode, zoom: +cy.zoom().toFixed(3), labelPx: +(NODE_FONT * cy.zoom()).toFixed(1),
+      canvas: [W, H], leaders: leaders().length, outside: out, leftmostX: Math.round(Math.min(...xs)) };
   }
 
   function updateStats() {
@@ -432,14 +447,16 @@
     $('#company-list').addEventListener('click', (e) => { const b = e.target.closest('button[data-id]'); if (b) location.hash = '#explore/' + b.dataset.id; });
     let raf;
     $('#thr').addEventListener('input', (e) => { S.thr = +e.target.value; $('#thr-out').textContent = fmt(S.thr); cancelAnimationFrame(raf); raf = requestAnimationFrame(() => draw(false)); });
-    $('#thr-reset').addEventListener('click', () => { S.thr = S.opThr; $('#thr').value = S.thr; $('#thr-out').textContent = fmt(S.thr); draw(false); });
-    $('#t-rollup').addEventListener('change', (e) => { S.rollups = e.target.checked; draw(false); });
-    $('#t-collapse').addEventListener('change', (e) => { S.collapse = e.target.checked; S.expanded.clear(); draw(false); });
-    $('#t-unplaced').addEventListener('change', (e) => { S.unplaced = e.target.checked; draw(false); });
+    $('#thr').addEventListener('change', () => draw(false, true));   // refit once the slider is released
+    $('#thr-reset').addEventListener('click', () => { S.thr = S.opThr; $('#thr').value = S.thr; $('#thr-out').textContent = fmt(S.thr); draw(false, true); });
+    $('#t-rollup').addEventListener('change', (e) => { S.rollups = e.target.checked; draw(false, true); });
+    $('#t-collapse').addEventListener('change', (e) => { S.collapse = e.target.checked; S.expanded.clear(); draw(false, true); });
+    $('#t-unplaced').addEventListener('change', (e) => { S.unplaced = e.target.checked; draw(false, true); });
     $('#t-truth').addEventListener('change', (e) => { S.truth = e.target.checked; document.body.classList.toggle('truth', S.truth); draw(false); if (S.selected) showDetails(S.byId.get(S.selected)); });
-    $('#f-dept').addEventListener('change', (e) => { S.dept = e.target.value; draw(false); });
+    $('#f-dept').addEventListener('change', (e) => { S.dept = e.target.value; draw(false, true); });
     $('#fit').addEventListener('click', () => S.cy && S.cy.animate({ fit: { padding: 24 } }, { duration: 250 }));
-    window.orgchart = S; // handy for debugging and screenshot scripts
+    S.viewReport = viewReport; S.readableView = readableView;
+    window.orgchart = S; // handy for debugging, screenshot scripts and scripts/check_view.py
     $('#d-close').addEventListener('click', () => { hideDetails(); clearDim(); });
     $('#d-body').addEventListener('click', (e) => { const b = e.target.closest('[data-focus]'); if (!b) return; const id = b.dataset.focus; if (!S.cy.getElementById(id).length) { const p = parentOf(S.byId.get(id)); if (p) S.expanded.add(p.p); S.unplaced = true; $('#t-unplaced').checked = true; draw(false); } focus(id); });
     $('#more-controls').addEventListener('click', (e) => { const open = $('#toolbar').classList.toggle('open'); e.currentTarget.setAttribute('aria-expanded', open); requestAnimationFrame(() => S.cy && S.cy.resize()); });
