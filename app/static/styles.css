@@ -155,6 +155,9 @@ body.truth .truth-only{display:inline-flex!important}
 .drop:hover,.drop.over{border-color:var(--accent)}
 .drop svg{color:var(--accent)}
 .err{margin-top:14px;color:var(--wrong);font-weight:500}
+#run-upload{display:inline-flex;align-items:center;gap:8px}
+#run-upload[aria-busy=true]{cursor:progress;opacity:.85}
+.drop.has-error{border-color:var(--wrong)}
 .steps{counter-reset:s;list-style:none;padding:0;margin:0 0 20px;display:grid;gap:18px;max-width:72ch}
 .steps li{display:grid;grid-template-columns:34px 1fr;gap:0 12px}
 .steps li::before{counter-increment:s;content:counter(s);grid-row:span 2;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;border:1px solid var(--line);font-family:"IBM Plex Mono",monospace;font-size:13px;color:var(--accent)}

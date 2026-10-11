@@ -512,7 +512,11 @@
   let file = null;
   function setFile(f) { file = f; $('#drop-msg').textContent = f ? `${f.name} · ${(f.size / 1024).toFixed(0)} KB` : 'Nothing selected yet'; $('#run-upload').disabled = !f; $('#upload-err').hidden = true; }
   async function runUpload() {
-    const btn = $('#run-upload'); btn.disabled = true; btn.textContent = 'Inferring…';
+    const btn = $('#run-upload'), err = $('#upload-err');
+    if (!file || btn.disabled && btn.getAttribute('aria-busy') === 'true') return;
+    btn.disabled = true; btn.setAttribute('aria-busy', 'true');
+    btn.innerHTML = '<svg class="spin" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 3a9 9 0 1 1-9 9"/></svg><span>Working…</span>';
+    err.hidden = true; $('#drop').classList.remove('has-error');
     try {
       const fd = new FormData(); fd.append('file', file);
       const d = await api('/api/infer', { method: 'POST', body: fd });
@@ -520,8 +524,10 @@
       setPayload(d);
       document.querySelectorAll('#company-list button').forEach((b) => b.setAttribute('aria-current', 'false'));
       $('#export').onclick = (e) => { if (S.payload.company.company_id !== 'UPLOAD') return; e.preventDefault(); downloadUploadCsv(); };
-    } catch (e) { const el = $('#upload-err'); el.textContent = e.message; el.hidden = false; }
-    finally { btn.disabled = !file; btn.textContent = 'Infer the org chart'; }
+    } catch (e) {
+      const msg = e instanceof TypeError ? 'Could not reach the server. It may be waking up; try again in a minute.' : e.message;
+      err.textContent = `Upload failed: ${msg}`; err.hidden = false; $('#drop').classList.add('has-error');
+    } finally { btn.removeAttribute('aria-busy'); btn.disabled = !file; btn.textContent = 'Infer the org chart'; }
   }
   function downloadUploadCsv() {
     const rows = [['person_id', 'name', 'title', 'level', 'department', 'manager_id', 'manager_name', 'confidence', 'rolls_up_to', 'reason']];
