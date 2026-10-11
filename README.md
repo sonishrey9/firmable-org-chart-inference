@@ -97,7 +97,7 @@ The generator ([`orgchart/generator.py`](orgchart/generator.py)) builds a **real
 | **Stale-record signal** (no update for 18+ months) | Ignore dates | Leavers should get no edge and should not "steal" reports | It also penalises current staff with old profiles. The ablation shows it is still the biggest single win (coverage 5.9% → 9.2%) |
 | **Phantom candidates for unreadable titles** | Ignore unreadable records | An unreadable title nearby might be the real manager, so confidence should drop | A small coverage cost |
 | **Split by company (60/40), calibrate and threshold on train only** | Random split by person | People in one company are correlated, so splitting by company avoids leakage | Fewer companies to calibrate on |
-| **FastAPI + static SPA, precomputed per-company JSON** | Streamlit; React with a build step | A custom interactive chart (Cytoscape + dagre), no Node build, fits easily in Render's free 512 MB (about 150 MB RSS after an upload) | The CDN Tailwind build is a dev convenience, and the frontend is plain JS |
+| **FastAPI + static SPA, precomputed per-company JSON** | Streamlit; React with a build step | A custom interactive chart (Cytoscape + dagre), no Node build, fits easily in Render's free 512 MB (about 150 MB RSS after an upload) | Plain JS and hand-written CSS (no Tailwind, no bundler), so more code to own by hand |
 
 ## How we measured it
 
@@ -151,7 +151,7 @@ I searched GitHub and the web first (org-chart inference, title normalisation an
 | RapidFuzz | Typo repair, near-duplicate titles | MIT |
 | pandas, NumPy, PyArrow | Data handling | BSD / Apache-2.0 |
 | FastAPI, Uvicorn, python-multipart | API and server | MIT / BSD / Apache-2.0 |
-| Cytoscape.js + dagre, Chart.js, Tailwind CDN | Chart, layout, charts, styling | MIT |
+| Cytoscape.js + dagre, Chart.js | Chart, layout, charts | MIT |
 | IBM Plex Sans and Mono | Type | OFL-1.1 |
 
 Considered and not used: `find-job-titles` (extracts titles from text, which we don't need), a MIT seniority classifier on Hugging Face (needs sentence-transformers, too heavy for 512 MB, and covers seniority only), `job_title_ner` (its training data has separate terms), `org_chart_helper` (GPL and needs existing reporting lines), and O*NET (occupations, not hierarchy).
@@ -183,6 +183,14 @@ Considered and not used: `find-job-titles` (extracts titles from text, which we 
 ## Hosting (Render free tier)
 
 `render.yaml` defines one free Python web service: `pip install -r requirements.txt`, then `uvicorn app.main:app --host 0.0.0.0 --port $PORT`, with a `/health` check. Results are precomputed and committed, so nothing heavy runs at build or boot. Each company's chart is a ~25 KB gzipped JSON loaded only when opened. **Free instances sleep after about 15 minutes of inactivity, and waking takes about a minute.** The app shows a "waking up" loader while that happens.
+
+**Pushing (the repo is private):**
+
+```bash
+gh repo create sonishrey9/firmable-org-chart-inference --private --source . --push
+```
+
+Render can deploy a private repo once its GitHub app has access to it: in Render, go to New → Blueprint, connect GitHub, and grant the Render app access to `firmable-org-chart-inference` (either "Only select repositories" or all of them). Render then reads `render.yaml`. Reviewers who need the code must be added as collaborators. The live demo URL works without that.
 
 ## Repo layout
 
