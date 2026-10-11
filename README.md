@@ -2,7 +2,7 @@
 
 Turn a flat list of people and job titles into a reporting tree for each company, with a calibrated confidence on every edge. **A wrong edge is worse than no edge**, so the system abstains when it isn't sure. When the direct manager is ambiguous but everyone who could be the manager reports to the same person, it publishes a weaker "rolls up to" link instead.
 
-- **Live demo:** `<add Render URL after deploy>`. It runs on free hosting, so the first load after a quiet spell takes about a minute while the server wakes up.
+- **Live demo:** https://org-chart-inference.onrender.com. It runs on free hosting, so the first load after a quiet spell takes about a minute while the server wakes up.
 - **Spec:** [`docs/SPEC.md`](docs/SPEC.md) · **Walkthrough:** [`docs/WALKTHROUGH.md`](docs/WALKTHROUGH.md) · **Build log:** [`BUILD_LOG.md`](BUILD_LOG.md)
 
 ![Explore view](docs/screenshots/desktop-details.png)
