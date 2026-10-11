@@ -2,8 +2,8 @@
   /* Apple-like neutral palette. One accent; red only for wrong edges in answer-key mode. */
   --paper:#fbfbfd; --panel:#ffffff; --ink:#1d1d1f; --muted:#6e6e73; --line:#e3e3e8; --line2:#f2f2f5;
   --accent:#0071e3; --accent-ink:#ffffff; --focus:#0071e3;
-  /* confidence ramp, all >= 3:1 on white: deep blue, blue, grey, light grey */
-  --c1:#8e8e93; --c2:#6e6e73; --c3:#3a7fd5; --c4:#0058b9; --wrong:#d70015;
+  /* confidence ramp, all >= 3:1 on white: deep blue, clearly lighter blue, grey, light grey (dark theme: bright blue, dimmer blue) */
+  --c1:#8e8e93; --c2:#6e6e73; --c3:#5791d9; --c4:#0058b9; --wrong:#d70015;
   --node:#ffffff; --node-ink:#1d1d1f;
   --shadow:0 1px 2px rgba(0,0,0,.04),0 8px 24px rgba(0,0,0,.06);
   --shadow-lg:0 2px 6px rgba(0,0,0,.05),0 18px 48px rgba(0,0,0,.12);
@@ -16,7 +16,7 @@
 [data-theme=dark]{
   --paper:#000000; --panel:#161618; --ink:#f5f5f7; --muted:#a1a1a6; --line:#2c2c2e; --line2:#1f1f22;
   --accent:#2997ff; --accent-ink:#000000; --focus:#2997ff;
-  --c1:#7d7d82; --c2:#a1a1a6; --c3:#3d8fe0; --c4:#64b5ff; --wrong:#ff453a;
+  --c1:#7d7d82; --c2:#a1a1a6; --c3:#3478c4; --c4:#64b5ff; --wrong:#ff453a;
   --node:#1c1c1e; --node-ink:#f5f5f7;
   --shadow:0 1px 2px rgba(0,0,0,.5),0 8px 24px rgba(0,0,0,.4);
   --shadow-lg:0 2px 6px rgba(0,0,0,.5),0 18px 48px rgba(0,0,0,.6);
