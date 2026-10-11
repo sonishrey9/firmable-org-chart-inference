@@ -11,7 +11,7 @@
     page: 1, pageSize: 25, total: 0, q: '', industry: '', size: '', noise: '',
     payload: null, byId: new Map(), thr: 0.91, opThr: 0.91,
     rollups: true, collapse: true, unplaced: false, truth: false, dept: '',
-    expanded: new Set(), open: new Set(), expandAll: false, foldLevel: 2, selected: null, cy: null, metrics: null, charts: {},
+    expanded: new Set(), open: new Set(), expandAll: false, foldLevel: 2, wrapRows: 1, selected: null, cy: null, metrics: null, charts: {},
   };
 
   /* ---------- waking loader ---------- */
@@ -225,7 +225,32 @@
         els.push({ data: { id: 'e:' + fid, source: at, target: fid, conf: avg, color: css('--muted') }, classes: allRoll ? 'rollup' : 'edge' });
       }
     }
+    if (S.wrapRows > 1 && !S.expandAll) wrapExecRows(els, nodes.find((n) => n.status === 'root' && shown.has(n.id)));
     return els;
+  }
+  // Desktop only: when the exec row is too wide, split it into S.wrapRows rows. Each extra row hangs off an
+  // invisible anchor that sits just below the previous row's deepest visible node, so rows never interleave.
+  function wrapExecRows(els, ceo) {
+    if (!ceo) return;
+    // everything hanging off the CEO row: execs first, then the CEO's own chips (they go in the last row)
+    const out = els.filter((e) => e.data.source === ceo.id && !(e.classes || '').includes('ghost'));
+    const execEdges = [...out.filter((e) => S.byId.get(e.data.target)?.level === 1), ...out.filter((e) => S.byId.get(e.data.target)?.level !== 1)];
+    if (execEdges.length < 3) return;
+    const kidsOf = new Map();
+    for (const e of els) if (e.data.source) { if (!kidsOf.has(e.data.source)) kidsOf.set(e.data.source, []); kidsOf.get(e.data.source).push(e.data.target); }
+    const depth = (id) => 1 + Math.max(0, ...(kidsOf.get(id) || []).map(depth));
+    const per = Math.ceil(execEdges.length / S.wrapRows);
+    let prev = ceo.id, prevRow = execEdges.slice(0, per);
+    for (let r = 1; r < S.wrapRows; r++) {
+      const row = execEdges.slice(r * per, (r + 1) * per);
+      if (!row.length) break;
+      const aid = 'row:' + r;
+      const gap = Math.max(...prevRow.map((e) => depth(e.data.target)));   // ranks used by the previous row
+      els.push({ data: { id: aid }, classes: 'row-anchor' });
+      els.push({ data: { id: 'e:' + aid, source: prev, target: aid, conf: 1, color: css('--muted'), minLen: gap + 1 }, classes: 'edge row-link' });
+      for (const e of row) e.data.source = aid;
+      prev = aid; prevRow = row;
+    }
   }
   function edgeCorrect(n, p) {
     if (p.kind === 'edge') return n.manager_id === n.true_manager_id || S.byId.get(n.manager_id)?.duplicate_of === n.true_manager_id ? true : !!n.proposed_correct && n.manager_id === p.p;
@@ -250,7 +275,9 @@
       { selector: 'node.grp-rollup', style: { 'border-width': 1, 'border-style': 'dashed', 'border-color': muted } },
       { selector: 'node:selected', style: { 'border-width': 2.5, 'border-color': accent, 'overlay-opacity': 0 } },
       { selector: 'node.dim', style: { opacity: 0.25 } },
-      { selector: 'edge', style: { 'curve-style': 'taxi', 'taxi-direction': 'downward', 'taxi-turn': 24, width: 'mapData(conf, 0.5, 1, 1, 3.4)', 'line-color': 'data(color)', 'target-arrow-shape': 'none' } },
+      { selector: 'edge', style: { 'curve-style': 'taxi', 'taxi-direction': 'downward', 'taxi-turn': '50%', 'taxi-turn-min-distance': 4, width: 'mapData(conf, 0.5, 1, 1, 3.4)', 'line-color': 'data(color)', 'target-arrow-shape': 'none' } },
+      { selector: 'node.row-anchor', style: { width: 1, height: 1, opacity: 0, label: '', events: 'no' } },
+      { selector: 'edge.row-link', style: { width: 1.6, 'taxi-turn': 12 } },   // turn right under the source so the bus never cuts across a row
       { selector: 'edge.ghost', style: { opacity: 0, events: 'no' } },
       { selector: 'edge.rollup', style: { 'line-style': 'dashed', 'line-dash-pattern': [5, 4], width: 1.4 } },
       { selector: 'edge.wrong', style: { width: 3 } },
@@ -264,7 +291,7 @@
   //       {expand: id} = keep the viewport, then pan just enough to bring the opened chip's subtree into view
   function layout() {
     S.cy.batch(() => { S.cy.elements().remove(); S.cy.add(buildElements()); });
-    S.cy.layout({ name: 'dagre', rankDir: 'TB', nodeSep: 12, rankSep: 56, edgeSep: 6, animate: false, fit: false }).run();
+    S.cy.layout({ name: 'dagre', rankDir: 'TB', nodeSep: 12, rankSep: S.wrapRows > 1 && !S.expandAll ? 28 : 56, edgeSep: 6, animate: false, fit: false, minLen: (e) => e.data('minLen') || 1 }).run();
   }
   function draw(animate, view = animate ? 'auto' : 'keep') {
     if (!S.payload) return;
@@ -279,7 +306,10 @@
     let anchor = null;
     if (view && view.expand) { const a = S.cy.getElementById(view.expand); if (a.length) anchor = { id: view.expand, r: { ...a.renderedPosition() } }; }
     if (view === 'auto' && !S.expandAll) {
-      for (const L of [2, 1, 0]) { S.foldLevel = L; layout(); if (fitZoom() >= MIN_ZOOM) break; }
+      // desktop: before folding the execs into a chip, try wrapping them into 2-4 rows
+      const desk = window.innerWidth >= 1024;
+      const tries = [[2, 1], [1, 1], ...(desk ? [[1, 2], [1, 3], [1, 4]] : []), [0, 1]];
+      for (const [L, R] of tries) { S.foldLevel = L; S.wrapRows = R; layout(); if (fitZoom() >= MIN_ZOOM) break; }
     } else layout();
     if (view === 'auto' || view === 'fit') readableView();
     else if (anchor) revealSubtree(anchor, vp.zoom);
@@ -356,7 +386,7 @@
       minPx = Math.min(minPx, n.numericStyle('font-size') * z);
     });
     const r = rootNode(), rb = r.renderedBoundingBox();
-    return { mode: S.viewMode, foldLevel: S.expandAll ? 'all' : S.foldLevel, zoom: +z.toFixed(3), labelPx: +minPx.toFixed(1),
+    return { mode: S.viewMode, foldLevel: S.expandAll ? 'all' : S.foldLevel, wrapRows: S.wrapRows, zoom: +z.toFixed(3), labelPx: +minPx.toFixed(1),
       canvas: [W, H], visible: vis.length, chips: vis.filter('.fold').length, outside: out,
       ceoOnScreen: rb.x1 >= 0 && rb.x2 <= W && rb.y1 >= 0 && rb.y2 <= H, animating: cy.animated() };
   }
@@ -569,7 +599,7 @@
       else { S.expandAll = true; draw(false, 'fit'); }
     });
     S.viewReport = viewReport; S.readableView = readableView;
-    S.fitLevels = () => { const keep = S.foldLevel, out = {}; for (const L of [2, 1, 0]) { S.foldLevel = L; layout(); const bb = shownBox(); out[L] = { fitZoom: +fitZoom().toFixed(3), w: Math.round(bb.w), h: Math.round(bb.h) }; } S.foldLevel = keep; draw(false, 'fit'); return out; };
+    S.fitLevels = () => { const k = [S.foldLevel, S.wrapRows], out = {}; for (const [L, R] of [[2, 1], [1, 1], [1, 2], [1, 3], [1, 4], [0, 1]]) { S.foldLevel = L; S.wrapRows = R; layout(); const bb = shownBox(); out[L + 'x' + R] = { fitZoom: +fitZoom().toFixed(3), w: Math.round(bb.w), h: Math.round(bb.h) }; } [S.foldLevel, S.wrapRows] = k; draw(false, 'fit'); return out; };
     window.orgchart = S; // handy for debugging, screenshot scripts and scripts/check_view.py
     $('#d-close').addEventListener('click', () => { hideDetails(); clearDim(); });
     $('#d-body').addEventListener('click', (e) => { const b = e.target.closest('[data-focus]'); if (!b) return; const id = b.dataset.focus; revealPerson(id); focus(id); });

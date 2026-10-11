@@ -1,7 +1,7 @@
 """Browser check for the chart's initial view (needs `pip install playwright` and a Chrome/Chromium).
 
 For each viewport width, opens the default company (Aurora Works), the largest company and an uploaded
-CSV. Strict check on the initial view: every visible node (CEO, execs, VPs and the "+N" fold chips) is
+CSV (plus Quanta Stores, 12 execs, on desktop widths). Strict check on the initial view: every visible node (CEO, execs, VPs and the "+N" fold chips) is
 fully inside the canvas, the smallest rendered label is >= 10px, and the CEO is on screen.
 It then opens the first fold chip and checks the zoom did not change and the chip's parent is still on screen.
 
@@ -40,6 +40,7 @@ async def main(url: str, chrome: str | None) -> int:
     index = json.loads((ROOT / "data/app/index.json").read_text())
     largest = max(index, key=lambda c: c["people"])
     default = next(c for c in index if c["company_name"] == "Aurora Works")
+    most_execs = next(c for c in index if c["company_name"] == "Quanta Stores")   # 12 execs: exercises row wrapping
     ok_all = True
     async with async_playwright() as p:
         b = await p.chromium.launch(executable_path=chrome, args=["--no-sandbox"]) if chrome else await p.chromium.launch()
@@ -60,6 +61,13 @@ async def main(url: str, chrome: str | None) -> int:
             runs.append(("largest", largest["company_name"]))
             reports.append(await pg.evaluate("window.orgchart.viewReport()"))
             reports[-1]["expand"] = await pg.evaluate(EXPAND)
+            if w >= 1024:
+                await pg.goto(f"{url}/#explore/{most_execs['company_id']}")
+                await pg.wait_for_function(f"window.orgchart.payload.company.company_id === '{most_execs['company_id']}'")
+                await pg.wait_for_timeout(300)
+                runs.append(("execs", most_execs["company_name"]))
+                reports.append(await pg.evaluate("window.orgchart.viewReport()"))
+                reports[-1]["expand"] = await pg.evaluate(EXPAND)
             await pg.goto(url + "/#upload")
             await pg.set_input_files("#file", str(ROOT / "data/sample_upload.csv"))
             await pg.click("#run-upload")
@@ -73,7 +81,7 @@ async def main(url: str, chrome: str | None) -> int:
                 ex = r["expand"]
                 ex_ok = ex is None or (ex["zoomKept"] and ex["parentOnScreen"] and ex["grew"])
                 ok_all &= ok and ex_ok
-                print(f"{w:>5}px  {kind:<8} {name:<18} {'PASS' if ok else 'FAIL'}  fold={r['foldLevel']} mode={r['mode']:<11} zoom={r['zoom']:<5} "
+                print(f"{w:>5}px  {kind:<8} {name:<18} {'PASS' if ok else 'FAIL'}  fold={r['foldLevel']} rows={r['wrapRows']} mode={r['mode']:<11} zoom={r['zoom']:<5} "
                       f"label={r['labelPx']}px visible={r['visible']} chips={r['chips']} outside={len(r['outside'])} ceo={r['ceoOnScreen']}"
                       f"  | expand {'n/a' if ex is None else ('PASS' if ex_ok else 'FAIL ' + str(ex))}")
             await ctx.close()
