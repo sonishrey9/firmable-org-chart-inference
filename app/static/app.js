@@ -222,7 +222,7 @@
       } else {
         const confs = ids.map((i) => par.get(i).conf); const avg = confs.reduce((a, b) => a + b, 0) / confs.length;
         const allRoll = ids.every((i) => par.get(i).kind === 'rollup');
-        els.push({ data: { id: 'e:' + fid, source: at, target: fid, conf: avg, color: css('--muted') }, classes: allRoll ? 'rollup' : 'edge' });
+        els.push({ data: { id: 'e:' + fid, source: at, target: fid, conf: avg, color: css('--c1') }, classes: (allRoll ? 'rollup' : 'edge') + ' fold-link' });
       }
     }
     if (S.wrapRows > 1 && !S.expandAll) wrapExecRows(els, nodes.find((n) => n.status === 'root' && shown.has(n.id)));
@@ -259,27 +259,30 @@
 
   function style() {
     const ink = css('--node-ink'), node = css('--node'), line = css('--line'), muted = css('--muted'), accent = css('--accent');
+    const dark = document.documentElement.dataset.theme === 'dark', line2 = css('--line2');
+    // white cards with a hairline and a soft halo (cytoscape has no blur, so the underlay stands in for a shadow)
+    const card = { 'underlay-color': '#000', 'underlay-opacity': dark ? 0.35 : 0.035, 'underlay-padding': 3, 'underlay-shape': 'round-rectangle' };
     return [
       { selector: 'node', style: { shape: 'round-rectangle', width: 180, height: 56, 'background-color': node, 'border-width': 1, 'border-color': line,
-        label: 'data(label)', 'text-wrap': 'wrap', 'text-max-width': 168, 'font-family': 'IBM Plex Sans, sans-serif', 'font-size': NODE_FONT, 'min-zoomed-font-size': 6, color: ink,
-        'text-valign': 'center', 'text-halign': 'center', 'line-height': 1.25 } },
-      { selector: 'node.ceo', style: { 'border-width': 2, 'border-color': accent, 'font-weight': 700 } },
-      { selector: 'node.exec', style: { 'border-width': 1.5, 'border-color': accent } },
-      { selector: 'node.lead', style: { 'border-color': muted } },
-      { selector: 'node.nomgr', style: { 'border-style': 'dashed', 'border-color': muted, 'border-width': 1.5 } },
-      { selector: 'node.unplaced', style: { 'border-style': 'dashed', 'background-opacity': 0.55 } },
+        label: 'data(label)', 'text-wrap': 'wrap', 'text-max-width': 168, 'font-family': FONT, 'font-size': NODE_FONT, 'min-zoomed-font-size': 6, color: ink,
+        'text-valign': 'center', 'text-halign': 'center', 'line-height': 1.3, ...card } },
+      { selector: 'node.ceo', style: { 'border-width': 1.5, 'border-color': ink, 'font-weight': 600 } },
+      { selector: 'node.exec', style: { 'font-weight': 500 } },
+      { selector: 'node.nomgr', style: { 'border-style': 'dashed', 'border-color': muted, 'border-width': 1 } },
+      { selector: 'node.unplaced', style: { 'border-style': 'dashed', 'background-opacity': 0.6 } },
       { selector: 'node.stale', style: { opacity: 0.6 } },
-      { selector: 'node.group', style: { width: 132, height: 32, shape: 'round-rectangle', 'background-color': css('--line2'), 'border-width': 0, 'font-size': NODE_FONT, color: muted, 'font-weight': 600 } },
-      { selector: 'node.fold', style: { width: 140, height: 48, 'background-color': css('--panel'), 'border-width': 1.5, 'border-style': 'dashed', 'border-color': accent, color: css('--accent'), 'text-max-width': 130 } },
-      { selector: 'node.fold-wrong', style: { 'border-color': css('--wrong'), 'border-width': 2.5, 'border-style': 'solid', height: 66 } },
+      { selector: 'node.group', style: { width: 132, height: 32, shape: 'round-rectangle', 'background-color': line2, 'border-width': 0, 'font-size': NODE_FONT, color: muted, 'font-weight': 500, 'underlay-opacity': 0 } },
+      { selector: 'node.fold', style: { width: 160, height: 50, 'background-color': line2, 'border-width': 1, 'border-style': 'dashed', 'border-color': muted, color: ink, 'text-max-width': 152 } },
+      { selector: 'node.fold-wrong', style: { 'border-color': css('--wrong'), 'border-width': 2, 'border-style': 'solid', height: 66 } },
       { selector: 'node.grp-rollup', style: { 'border-width': 1, 'border-style': 'dashed', 'border-color': muted } },
-      { selector: 'node:selected', style: { 'border-width': 2.5, 'border-color': accent, 'overlay-opacity': 0 } },
+      { selector: 'node:selected', style: { 'border-width': 2, 'border-color': accent, 'overlay-opacity': 0 } },
       { selector: 'node.dim', style: { opacity: 0.25 } },
-      { selector: 'edge', style: { 'curve-style': 'taxi', 'taxi-direction': 'downward', 'taxi-turn': '50%', 'taxi-turn-min-distance': 4, width: 'mapData(conf, 0.5, 1, 1, 3.4)', 'line-color': 'data(color)', 'target-arrow-shape': 'none' } },
+      { selector: 'edge', style: { 'curve-style': 'taxi', 'taxi-direction': 'downward', 'taxi-turn': '50%', 'taxi-turn-min-distance': 4, width: 'mapData(conf, 0.5, 1, 1, 3.6)', 'line-color': 'data(color)', 'target-arrow-shape': 'none' } },
       { selector: 'node.row-anchor', style: { width: 1, height: 1, opacity: 0, label: '', events: 'no' } },
       { selector: 'edge.row-link', style: { width: 1.6, 'taxi-turn': 12 } },   // turn right under the source so the bus never cuts across a row
       { selector: 'edge.ghost', style: { opacity: 0, events: 'no' } },
       { selector: 'edge.rollup', style: { 'line-style': 'dashed', 'line-dash-pattern': [5, 4], width: 1.4 } },
+      { selector: 'edge.fold-link', style: { width: 1.5 } },
       { selector: 'edge.wrong', style: { width: 3 } },
       { selector: 'edge.dim', style: { opacity: 0.15 } },
     ];
@@ -325,6 +328,7 @@
 
   // Fit what is shown with 40px padding, never below MIN_READABLE_PX labels, and always keep the CEO on
   // screen: centred with everything when it fits, otherwise centred on the CEO at the readable zoom.
+  const FONT = 'system-ui, -apple-system, BlinkMacSystemFont, Inter, Segoe UI, sans-serif';   // same stack as --font (cytoscape rejects quoted names)
   const MIN_READABLE_PX = 10;
   const NODE_FONT = 13;
   const MIN_ZOOM = MIN_READABLE_PX / NODE_FONT;
@@ -499,14 +503,14 @@
       ['Guess everyone', pct(m.naive_always_guess_test.precision), 'precision with no abstaining'],
     ];
     $('#m-strip').innerHTML = strip.map(([k, v, s]) => `<div><dt>${k}</dt><dd>${v}<small>${s}</small></dd></div>`).join('');
-    const ink = css('--ink'), muted = css('--muted'), line = css('--line'), accent = css('--accent'), c2 = css('--c1');
-    Chart.defaults.font.family = 'IBM Plex Sans, sans-serif'; Chart.defaults.color = muted; Chart.defaults.borderColor = line;
+    const ink = css('--ink'), muted = css('--muted'), line = css('--line'), accent = css('--accent'), c2 = css('--c2');
+    Chart.defaults.font.family = FONT; Chart.defaults.color = muted; Chart.defaults.borderColor = line;
     const pc = curves.precision_coverage.filter((r) => r.precision != null);
     const opPt = pc.reduce((b, r) => Math.abs(r.threshold - op.threshold) < Math.abs(b.threshold - op.threshold) ? r : b, pc[0]);
     Object.values(S.charts).forEach((c) => c.destroy());
     S.charts.pc = new Chart($('#ch-pc'), { type: 'scatter', data: { datasets: [
       { label: 'Threshold sweep', data: pc.map((r) => ({ x: r.coverage, y: r.precision, t: r.threshold })), showLine: true, borderColor: accent, backgroundColor: accent, pointRadius: 2, borderWidth: 2 },
-      { label: `Operating point (${fmt(op.threshold)})`, data: [{ x: t.coverage, y: t.precision, t: op.threshold }], pointRadius: 6, backgroundColor: c2, borderColor: c2 },
+      { label: `Operating point (${fmt(op.threshold)})`, data: [{ x: t.coverage, y: t.precision, t: op.threshold }], pointRadius: 6, backgroundColor: ink, borderColor: ink },
     ] }, options: { maintainAspectRatio: false, scales: { x: { title: { display: true, text: 'Coverage (share of people given an edge)' }, min: 0, max: 1, ticks: { callback: (v) => pct(v, 0) } }, y: { title: { display: true, text: 'Precision' }, min: 0.4, max: 1, ticks: { callback: (v) => pct(v, 0) } } },
       plugins: { tooltip: { callbacks: { label: (c) => `threshold ${fmt(c.raw.t)} · precision ${pct(c.raw.y)} · coverage ${pct(c.raw.x)}` } }, legend: { labels: { boxWidth: 10 } } } } });
     const rel = curves.reliability, raw = curves.reliability_raw;
