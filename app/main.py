@@ -14,6 +14,7 @@ from functools import lru_cache
 from pathlib import Path
 
 from fastapi import FastAPI, File, HTTPException, Query, UploadFile
+from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse, Response
 from fastapi.staticfiles import StaticFiles
 
@@ -141,6 +142,8 @@ async def infer(file: UploadFile = File(...), format: str = "json"):
     df.columns = [c.strip().lower() for c in df.columns]
     if "title" not in df.columns:
         raise HTTPException(400, "The CSV needs at least a 'title' column (and ideally 'full_name').")
+    if df.empty:
+        raise HTTPException(400, "No rows found. The file has a header but no people.")
     if len(df) > MAX_UPLOAD_ROWS:
         raise HTTPException(413, f"Up to {MAX_UPLOAD_ROWS} rows per upload, this file has {len(df)}.")
     if "full_name" not in df.columns:

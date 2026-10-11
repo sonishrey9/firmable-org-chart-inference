@@ -55,3 +55,9 @@ def test_upload_infer(client):
     assert any(n["status"] == "edge" for n in d["nodes"])
     bad = client.post("/api/infer", files={"file": ("x.csv", b"foo,bar\n1,2\n", "text/csv")})
     assert bad.status_code == 400
+
+
+def test_upload_header_only_is_400(client):
+    r = client.post("/api/infer", files={"file": ("h.csv", b"full_name,title,department\n", "text/csv")})
+    assert r.status_code == 400
+    assert "No rows found" in r.json()["detail"]
