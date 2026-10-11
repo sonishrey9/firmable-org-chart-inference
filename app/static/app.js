@@ -434,6 +434,7 @@
     window.orgchart = S; // handy for debugging and screenshot scripts
     $('#d-close').addEventListener('click', () => { hideDetails(); clearDim(); });
     $('#d-body').addEventListener('click', (e) => { const b = e.target.closest('[data-focus]'); if (!b) return; const id = b.dataset.focus; if (!S.cy.getElementById(id).length) { const p = parentOf(S.byId.get(id)); if (p) S.expanded.add(p.p); S.unplaced = true; $('#t-unplaced').checked = true; draw(false); } focus(id); });
+    $('#more-controls').addEventListener('click', (e) => { const open = $('#toolbar').classList.toggle('open'); e.currentTarget.setAttribute('aria-expanded', open); requestAnimationFrame(() => S.cy && S.cy.resize()); });
     $('#open-picker').addEventListener('click', openPicker);
     $('#scrim').addEventListener('click', closePicker);
     $('#theme').addEventListener('click', () => {
