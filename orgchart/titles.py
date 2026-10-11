@@ -321,4 +321,10 @@ def parse_title(title: str | None, dept_field: str | None = None) -> ParsedTitle
         p.seniority = _seniority(text)
     if p.level is None:
         p.parsed_by = "none"
+        from . import llm_fallback   # optional, off unless ORGCHART_LLM=1 and a client is plugged in
+        if llm_fallback.enabled():
+            d = llm_fallback.classify(title)
+            if d:
+                p.level, p.dept, p.level_conf, p.dept_conf = d["level"], d["dept"] or p.dept, d["conf"], d["conf"]
+                p.parsed_by = "llm"
     return p

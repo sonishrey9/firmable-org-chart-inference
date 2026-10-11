@@ -27,7 +27,7 @@ def _same_person(a, b, dup: dict) -> bool:
 
 def label(pred: pd.DataFrame, truth: pd.DataFrame) -> pd.DataFrame:
     t = truth.rename(columns={"manager_id": "true_manager_id", "company_id": "_cid"})
-    m = pred.merge(t, on="person_id", how="left")
+    m = pred.merge(t, on="person_id", how="left", suffixes=("", "_true"))
     dup = {k: v for k, v in zip(truth.person_id, truth.duplicate_of) if isinstance(v, str)}
     parent = {k: v for k, v in zip(truth.person_id, truth.manager_id) if isinstance(v, str)}
     m["has_true_manager"] = m["true_manager_id"].notna()
