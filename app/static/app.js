@@ -332,6 +332,11 @@
     const sub = a.union(a.outgoers('node')).union(a.outgoers('node').outgoers('node'));
     const b = sub.renderedBoundingBox({ includeLabels: true });
     let dx = 0, dy = 0;
+    const all = cy.nodes(':visible').renderedBoundingBox({ includeLabels: true });
+    if (all.w <= W - 2 * pad && all.h <= H - 2 * pad) {     // whole chart fits at this zoom: just centre it
+      cy.animate({ panBy: { x: (W - all.w) / 2 - all.x1, y: (H - all.h) / 2 - all.y1 } }, { duration: 280, easing: 'ease-out-cubic' });
+      return;
+    }
     if (b.x2 > W - pad) dx = W - pad - b.x2;
     if (b.x1 + dx < pad) dx = pad - b.x1;
     if (b.y2 > H - pad) dy = H - pad - b.y2;
