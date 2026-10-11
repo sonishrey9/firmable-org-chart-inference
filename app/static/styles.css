@@ -12,7 +12,20 @@
   --c1:#f08a4b; --c2:#d9a640; --c3:#8dbf63; --c4:#4fb3a6; --wrong:#ff5c74;
   --node:#1b2129; --node-ink:#e9e6dd; --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 20px -10px rgba(0,0,0,.6);
 }
-*{box-sizing:border-box}
+/* minimal reset + the few utility classes used (replaces the Tailwind CDN) */
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+h1,h2,h3,p,figure,dl,dd{margin:0}
+button,input,select,textarea{font:inherit;color:inherit}
+img,svg{display:block}
+.brand svg,.search svg,.legend svg{flex:none}
+.flex{display:flex}.flex-wrap{flex-wrap:wrap}.items-center{align-items:center}.gap-3{gap:.75rem}.min-w-0{min-width:0}
+.font-semibold{font-weight:600}.text-xs{font-size:12px;line-height:16px}.text-sm{font-size:14px;line-height:20px}.text-lg{font-size:18px;line-height:26px}
+.leading-tight{line-height:1.25}.truncate{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mt-4{margin-top:1rem}.mt-6{margin-top:1.5rem}.p-3{padding:.75rem}
+@media (min-width:1024px){.lg\:hidden{display:none!important}}
+.lbl-short{display:none}
+.toolbar .more-btn{display:none}
 html,body{height:100%}
 body{margin:0;background:var(--paper);color:var(--ink);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
 ::selection{background:color-mix(in oklab,var(--accent) 28%,transparent)}
