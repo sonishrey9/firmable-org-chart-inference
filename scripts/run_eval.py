@@ -21,6 +21,7 @@ from orgchart.infer import Config  # noqa: E402
 
 ap = argparse.ArgumentParser()
 ap.add_argument("--no-ablations", action="store_true")
+ap.add_argument("--keep-ablations", action="store_true", help="reuse ablations from the existing metrics.json")
 ap.add_argument("--data", default=str(ROOT / "data"))
 a = ap.parse_args()
 data = Path(a.data)
@@ -33,6 +34,7 @@ companies = pd.read_parquet(data / "companies.parquet")
 
 t0 = time.time()
 m, model, thr = run_pipeline(people, truth)
+rollup_thr = m.attrs.get("rollup_threshold")
 elapsed = time.time() - t0
 m = m.merge(companies[["company_id", "industry", "size_bucket", "noise_level", "country"]], on="company_id", how="left")
 test = m[m.split == "test"]
@@ -59,7 +61,7 @@ metrics = dict(
                  size_buckets=companies.size_bucket.value_counts().to_dict(),
                  noise_levels=companies.noise_level.value_counts().to_dict(),
                  test_companies=int(test.company_id.nunique()), train_companies=int(m[m.split == "train"].company_id.nunique())),
-    operating_point=dict(threshold=thr, rollup_threshold=m.attrs.get("rollup_threshold"), target_precision=0.95,
+    operating_point=dict(threshold=thr, rollup_threshold=rollup_thr, target_precision=0.95,
                          chosen_on="train companies", reported_on="held-out test companies"),
     test=headline(test), train=headline(m[m.split == "train"]),
     naive_always_guess_test=None,
@@ -79,7 +81,10 @@ metrics["naive_always_guess_test"] = dict(precision=round(float(naive.precision)
 metrics["breakdowns"] = {k: breakdown(test, k).to_dict("records") for k in
                          ["noise_level", "size_bucket", "industry", "true_level", "is_contractor", "heldout_title"]}
 
-if not a.no_ablations:
+prev = reports / "metrics.json"
+if a.keep_ablations and prev.exists():
+    metrics["ablations"] = json.loads(prev.read_text()).get("ablations")
+elif not a.no_ablations:
     abl = {}
     for name, cfg, kind in [
         ("full system", Config(), "heuristic"),
