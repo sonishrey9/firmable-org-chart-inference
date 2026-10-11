@@ -235,17 +235,25 @@
   const NODE_FONT = 13;
   function readableView() {
     const cy = S.cy;
-    const ys = [...new Set(cy.nodes().map((n) => Math.round(n.position('y'))))].sort((a, b) => a - b);
-    const top = cy.nodes().filter((n) => Math.round(n.position('y')) <= (ys[2] ?? ys[ys.length - 1]));
+    const vis = cy.nodes(':visible');
+    const ys = [...new Set(vis.map((n) => Math.round(n.position('y'))))].sort((a, b) => a - b);
+    const top = vis.filter((n) => Math.round(n.position('y')) <= (ys[2] ?? ys[ys.length - 1]));
     cy.fit(top, 40);
     const minZ = MIN_READABLE_PX / NODE_FONT;
     if (cy.zoom() > 1.15) cy.zoom(1.15);
     if (cy.zoom() < minZ) cy.zoom(minZ);
-    const root = cy.nodes('.ceo').first();
+    // root = the CEO if we have one, else the top-most node (uploads may not mark a CEO)
+    let root = cy.nodes('.ceo').first();
+    if (!root.length) root = top.sort((a, b) => a.position('y') - b.position('y') || a.position('x') - b.position('x')).first();
     const bb = top.boundingBox();
     const z = cy.zoom();
     const cx = root.length ? root.position('x') : (bb.x1 + bb.x2) / 2;
     cy.pan({ x: cy.width() / 2 - cx * z, y: 32 - bb.y1 * z });
+    if (root.length) { // never clip the root, even on a narrow canvas
+      const rb = root.renderedBoundingBox(), pad = 12;
+      if (rb.x1 < pad) cy.panBy({ x: pad - rb.x1, y: 0 });
+      else if (rb.x2 > cy.width() - pad) cy.panBy({ x: cy.width() - pad - rb.x2, y: 0 });
+    }
   }
 
   function updateStats() {
@@ -392,7 +400,7 @@
     try {
       const fd = new FormData(); fd.append('file', file);
       const d = await api('/api/infer', { method: 'POST', body: fd });
-      location.hash = '#explore';
+      location.hash = '#explore'; route();   // show the canvas before laying out, so the initial view is sized correctly
       setPayload(d);
       document.querySelectorAll('#company-list button').forEach((b) => b.setAttribute('aria-current', 'false'));
       $('#export').onclick = (e) => { if (S.payload.company.company_id !== 'UPLOAD') return; e.preventDefault(); downloadUploadCsv(); };
