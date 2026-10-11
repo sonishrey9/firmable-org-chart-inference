@@ -152,7 +152,6 @@ I searched GitHub and the web first (org-chart inference, title normalisation an
 | pandas, NumPy, PyArrow | Data handling | BSD / Apache-2.0 |
 | FastAPI, Uvicorn, python-multipart | API and server | MIT / BSD / Apache-2.0 |
 | Cytoscape.js + dagre, Chart.js | Chart, layout, charts | MIT |
-| IBM Plex Sans and Mono | Type | OFL-1.1 |
 
 Considered and not used: `find-job-titles` (extracts titles from text, which we don't need), a MIT seniority classifier on Hugging Face (needs sentence-transformers, too heavy for 512 MB, and covers seniority only), `job_title_ner` (its training data has separate terms), `org_chart_helper` (GPL and needs existing reporting lines), and O*NET (occupations, not hierarchy).
 

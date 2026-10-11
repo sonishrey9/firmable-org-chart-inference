@@ -16,7 +16,6 @@ This project uses the following open-source components as **libraries** (install
 | [Cytoscape.js](https://github.com/cytoscape/cytoscape.js) | Interactive graph rendering (CDN) | MIT |
 | [dagre](https://github.com/dagrejs/dagre) and [cytoscape-dagre](https://github.com/cytoscape/cytoscape.js-dagre) | Hierarchical tree layout (CDN) | MIT |
 | [Chart.js](https://github.com/chartjs/Chart.js) | Metrics charts (CDN) | MIT |
-| Instrument Sans, IBM Plex Mono (Google Fonts) | Typography | SIL Open Font License 1.1 |
 
 The full licence texts ship with each package. All are permissive (MIT, BSD, Apache-2.0 or OFL) and compatible with any licence chosen for this repository.
 
