@@ -215,7 +215,11 @@
         while (st.length) { const k = st.pop(); if (!keep.has(k)) continue; const p = par.get(k); if (p && !edgeCorrect(S.byId.get(k), p)) wrong++; st.push(...(kids.get(k) || [])); }
       }
       els.push({ data: { id: fid, fold: at, wrong, label: `${head}\n${total} ${total === 1 ? 'person' : 'people'}` + (wrong ? `\n⚠ ${wrong} wrong` : '') }, classes: 'group fold' + (wrong ? ' fold-wrong' : '') });
-      if (at !== ORPHANS) {
+      if (at === ORPHANS) {
+        // invisible link so the layout puts this chip on the row under the CEO (keeps a phone view centred on the CEO)
+        const root = L === 0 && nodes.find((n) => n.status === 'root' && shown.has(n.id));   // only when the CEO row is otherwise empty
+        if (root) els.push({ data: { id: 'e:' + fid, source: root.id, target: fid, conf: 1, color: css('--line') }, classes: 'ghost' });
+      } else {
         const confs = ids.map((i) => par.get(i).conf); const avg = confs.reduce((a, b) => a + b, 0) / confs.length;
         const allRoll = ids.every((i) => par.get(i).kind === 'rollup');
         els.push({ data: { id: 'e:' + fid, source: at, target: fid, conf: avg, color: css('--muted') }, classes: allRoll ? 'rollup' : 'edge' });
@@ -247,6 +251,7 @@
       { selector: 'node:selected', style: { 'border-width': 2.5, 'border-color': accent, 'overlay-opacity': 0 } },
       { selector: 'node.dim', style: { opacity: 0.25 } },
       { selector: 'edge', style: { 'curve-style': 'taxi', 'taxi-direction': 'downward', 'taxi-turn': 24, width: 'mapData(conf, 0.5, 1, 1, 3.4)', 'line-color': 'data(color)', 'target-arrow-shape': 'none' } },
+      { selector: 'edge.ghost', style: { opacity: 0, events: 'no' } },
       { selector: 'edge.rollup', style: { 'line-style': 'dashed', 'line-dash-pattern': [5, 4], width: 1.4 } },
       { selector: 'edge.wrong', style: { width: 3 } },
       { selector: 'edge.dim', style: { opacity: 0.15 } },
@@ -309,7 +314,11 @@
     if (!W || !H || !cy.nodes(':visible').length) return;
     const bb = shownBox();
     let z = fitZoom(), x;
-    if (z >= MIN_ZOOM) { x = (W - bb.w * z) / 2 - bb.x1 * z; S.viewMode = 'fit'; }
+    if (z >= MIN_ZOOM) {
+      x = (W - bb.w * z) / 2 - bb.x1 * z; S.viewMode = 'fit';
+      const r = rootNode(), xc = W / 2 - r.position('x') * z;   // prefer the CEO dead centre if the block still fits
+      if (r.length && bb.x1 * z + xc >= VIEW_PAD - 0.5 && bb.x2 * z + xc <= W - VIEW_PAD + 0.5) x = xc;
+    }
     else { z = MIN_ZOOM; const r = rootNode(); x = W / 2 - r.position('x') * z; S.viewMode = 'ceo-centred'; }
     const y = bb.h * z <= H - 2 * VIEW_PAD ? (H - bb.h * z) / 2 - bb.y1 * z : VIEW_PAD - bb.y1 * z;
     cy.viewport({ zoom: z, pan: { x, y } });
