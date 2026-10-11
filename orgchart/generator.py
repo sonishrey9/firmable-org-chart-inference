@@ -158,7 +158,7 @@ MANAGER_TITLES = {
     "Design": ["Design Manager", "{s} Manager", "Design Lead"],
     "Sales": ["{s} Sales Manager", "Sales Manager", "Regional Sales Manager", "Sales Manager, {s}", "SDR Manager"],
     "Marketing": ["{s} Manager", "Marketing Manager", "Manager, {s}"],
-    "Customer Success": ["{s} Manager", "Customer Success Manager Lead", "Support Manager", "Team Lead, {s}"],
+    "Customer Success": ["{s} Manager", "Customer Success Team Lead", "Support Manager", "Team Lead, {s}"],
     "Finance": ["{s} Manager", "Finance Manager", "Accounting Manager", "Controller"],
     "People": ["{s} Manager", "HR Manager", "Talent Acquisition Manager", "People Ops Manager"],
     "Legal": ["Legal Manager", "Compliance Manager", "Senior Counsel"],
@@ -217,9 +217,9 @@ SENIORITY_PREFIX = {
 HELDOUT = {
     5: ["Software Craftsperson", "Code Ninja", "Desarrollador de Software", "Entwickler", "Member of Technical Staff",
         "Analista de Datos", "Ejecutivo de Ventas", "Customer Hero", "Growth Hacker", "Vertriebsmitarbeiter"],
-    4: ["Jefe de Equipo", "Teamleiter", "Responsable de Ventas", "Squad Lead"],
-    3: ["Directora de Ventas", "Bereichsleiter", "Responsable Marketing"],
-    2: ["Vicepresidente de Ventas", "Leiter Vertrieb"],
+    4: ["Jefe de Equipo", "Teamleiter", "Squad Lead", "Responsable de Equipo"],
+    3: ["Bereichsleiter", "Directora de Area", "Abteilungsleiter"],
+    2: ["Vicepresidenta", "Hauptabteilungsleiter"],
 }
 JUNK = [" | We're hiring!", " @ {company}", " 🚀", " - Open to work", " | ex-Google", " (she/her)", " (he/him)"]
 
@@ -490,7 +490,7 @@ def generate(n_companies: int = 520, seed: int = 42) -> tuple[pd.DataFrame, pd.D
                                    heldout_title=heldout, n_direct_reports=len(p.reports)))
         # Stale records: people who left. Plausible titles, not in the tree: no true manager.
         n_stale = int(round(len(tree) * rng.uniform(0.01, 0.04)))
-        ic_pool = [p for p in tree.values() if p.level >= 4]
+        ic_pool = [p for p in tree.values() if p.level >= 4 and not p.is_assistant]
         for _ in range(n_stale):
             src = rng.choice(ic_pool)
             builder.n += 1

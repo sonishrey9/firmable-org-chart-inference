@@ -23,7 +23,7 @@ ABBREV = {
     "ops": "operations", "fin": "finance", "swe": "software engineer", "sde": "software engineer",
     "ae": "account executive", "csm": "customer success manager", "pmm": "product marketing manager",
     "ml": "machine learning", "dev": "developer", "devs": "developers", "infosec": "security",
-    "cybersecurity": "security", "cx": "customer experience", "hrbp": "hr business partner",
+    "cybersecurity": "security", "em": "engineering manager", "cx": "customer experience", "hrbp": "hr business partner",
 }
 EXEC_ABBREV = {"ceo": "CEO", "cto": "CTO", "cfo": "CFO", "cro": "CRO", "cmo": "CMO", "coo": "COO", "cpo": "CPO",
                "chro": "CHRO", "cdo": "CDO", "cio": "CIO", "ciso": "CISO", "cso": "CISO", "clo": "GC", "cco": "CCO"}
@@ -276,7 +276,8 @@ def parse_title(title: str | None, dept_field: str | None = None) -> ParsedTitle
             p.level, p.head_of, p.level_conf = 3, True, 0.75
         elif " director " in text:
             p.level, p.level_conf = 3, 0.95
-        elif any(ph in text for ph in IC_MANAGER_PHRASES) and " group " not in text and not text.rstrip().endswith(" lead"):
+        elif any(ph in text for ph in IC_MANAGER_PHRASES) and " group " not in text:
+            # "Program Manager Lead" / "CSM Lead" are senior ICs, not people managers
             p.level, p.level_conf = 5, 0.75
         elif " intern " in text:
             p.level, p.level_conf = 5, 0.95
