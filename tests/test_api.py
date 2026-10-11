@@ -66,3 +66,9 @@ def test_upload_header_only_is_400(client):
 def test_gzip_enabled(client):
     r = client.get("/api/companies", params={"page_size": 50}, headers={"Accept-Encoding": "gzip"})
     assert r.headers.get("content-encoding") == "gzip"
+
+
+def test_metrics_include_ic_ceiling(client):
+    m = client.get("/api/metrics").json()
+    assert 0 < m["ic_identifiability"]["by_team"] < 1
+    assert m["test"]["answered_any"] >= m["test"]["coverage"]

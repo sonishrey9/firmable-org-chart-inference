@@ -1,0 +1,6 @@
+{
+  "ics": 161603,
+  "by_team": 0.275,
+  "by_team_and_office": 0.3941,
+  "note": "Share of ICs whose true manager is the only manager in the company with that dept/level/team (upper bound for any title-only method)."
+}

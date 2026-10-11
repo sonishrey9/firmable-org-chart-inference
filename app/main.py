@@ -113,6 +113,9 @@ def metrics():
     m = dict(_metrics())
     m.pop("curves", None)
     m.pop("calibration_model", None)
+    ident = ROOT / "reports" / "identifiability.json"
+    if ident.exists():
+        m["ic_identifiability"] = json.loads(ident.read_text())
     return m
 
 

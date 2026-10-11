@@ -4,7 +4,7 @@ An IC's manager is identifiable from titles only if no other manager in the comp
 the true manager's (department, level, team), optionally plus office. Uses the answer key,
 so it is an analysis tool, not part of inference.
 """
-import sys
+import json
 from pathlib import Path
 
 import pandas as pd
@@ -25,3 +25,6 @@ for mid, cid in zip(ics.manager_id, ics.company_id):
     u1 += k1.get(key, 0) == 1
     u2 += k2.get(key + (m.location,), 0) == 1
 print(f"ICs: {len(ics)}; identifiable by team: {u1 / len(ics):.1%}; by team + office: {u2 / len(ics):.1%}")
+out = {"ics": int(len(ics)), "by_team": round(u1 / len(ics), 4), "by_team_and_office": round(u2 / len(ics), 4),
+       "note": "Share of ICs whose true manager is the only manager in the company with that dept/level/team (upper bound for any title-only method)."}
+(ROOT / "reports" / "identifiability.json").write_text(json.dumps(out, indent=2))

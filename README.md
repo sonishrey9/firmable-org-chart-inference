@@ -14,9 +14,8 @@ Numbers are pasted from `reports/metrics.json`, produced by `python scripts/run_
 | Metric | Value |
 |---|---|
 | **Edge precision** at the operating threshold (0.91) | **95.2%** (6,053 right, 307 wrong, of 6,360 edges) |
-| Edge coverage (people given a direct manager) | 9.2% |
+| Coverage: direct edge / edge **or** roll-up / IC ceiling | **9.2%** given a direct manager · **19.8%** answered by an edge or a roll-up · **27.5%** of ICs are identifiable at all from titles (see below) |
 | Roll-up ("rolls up to") precision | 97.1% |
-| People answered by an edge **or** a roll-up | 19.8% |
 | Naive baseline: always pick the top candidate | 51.9% precision at 96.7% coverage |
 | "Who runs department X?" | 95.0% precision, 93.4% answered |
 | "Economic buyer above this IC" (a VP or exec in their real chain) | 98.5% precision, 11.6% answered |
