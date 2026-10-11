@@ -1,0 +1,7 @@
+streamlit>=1.38
+pandas>=2.2
+numpy>=1.26
+pyarrow>=15
+plotly>=5.20
+rapidfuzz>=3.6
+faker>=25
