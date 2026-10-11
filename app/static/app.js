@@ -189,8 +189,8 @@
   function style() {
     const ink = css('--node-ink'), node = css('--node'), line = css('--line'), muted = css('--muted'), accent = css('--accent');
     return [
-      { selector: 'node', style: { shape: 'round-rectangle', width: 196, height: 52, 'background-color': node, 'border-width': 1, 'border-color': line,
-        label: 'data(label)', 'text-wrap': 'wrap', 'text-max-width': 180, 'font-family': 'IBM Plex Sans, sans-serif', 'font-size': 12, color: ink,
+      { selector: 'node', style: { shape: 'round-rectangle', width: 204, height: 54, 'background-color': node, 'border-width': 1, 'border-color': line,
+        label: 'data(label)', 'text-wrap': 'wrap', 'text-max-width': 188, 'font-family': 'IBM Plex Sans, sans-serif', 'font-size': NODE_FONT, 'min-zoomed-font-size': 6, color: ink,
         'text-valign': 'center', 'text-halign': 'center', 'line-height': 1.25 } },
       { selector: 'node.ceo', style: { 'border-width': 2, 'border-color': accent, 'font-weight': 700 } },
       { selector: 'node.exec', style: { 'border-width': 1.5, 'border-color': accent } },
@@ -229,15 +229,23 @@
     $('#export').href = c.company_id === 'UPLOAD' ? '#' : `/api/company/${c.company_id}/export.csv?threshold=${S.thr}`;
   }
 
-  // Fit is often too small to read for wide trees: keep a readable zoom and start at the top of the tree.
+  // Initial view: fit the top three ranks of the tree (with padding), never below a readable zoom,
+  // and keep the root fully on screen.
+  const MIN_READABLE_PX = 10;          // rendered label size we refuse to go below on load
+  const NODE_FONT = 13;
   function readableView() {
-    const cy = S.cy, minZ = window.innerWidth < 700 ? 0.6 : 0.78;
-    if (cy.zoom() >= minZ) return;
+    const cy = S.cy;
+    const ys = [...new Set(cy.nodes().map((n) => Math.round(n.position('y'))))].sort((a, b) => a - b);
+    const top = cy.nodes().filter((n) => Math.round(n.position('y')) <= (ys[2] ?? ys[ys.length - 1]));
+    cy.fit(top, 40);
+    const minZ = MIN_READABLE_PX / NODE_FONT;
+    if (cy.zoom() > 1.15) cy.zoom(1.15);
+    if (cy.zoom() < minZ) cy.zoom(minZ);
     const root = cy.nodes('.ceo').first();
-    const bb = cy.elements().boundingBox();
-    cy.zoom(minZ);
-    const focusX = root.length ? root.position('x') : (bb.x1 + bb.x2) / 2;
-    cy.pan({ x: cy.width() / 2 - focusX * minZ, y: 28 - bb.y1 * minZ });
+    const bb = top.boundingBox();
+    const z = cy.zoom();
+    const cx = root.length ? root.position('x') : (bb.x1 + bb.x2) / 2;
+    cy.pan({ x: cy.width() / 2 - cx * z, y: 32 - bb.y1 * z });
   }
 
   function updateStats() {
